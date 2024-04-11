@@ -3,7 +3,7 @@ const path = require('path');
 
 module.exports = {
   mode: 'development',
-  entry: './src/legacy/index.ts',
+  entry: './src/index.ts',
   module: {
     rules: [
       {
@@ -24,4 +24,7 @@ module.exports = {
     path: path.resolve(__dirname, 'frontend', 'assets', 'js'),
   },
   devtool: 'source-map',
+  experiments: {
+    topLevelAwait: true,
+  },
 };
