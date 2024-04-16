@@ -8,8 +8,6 @@ import { selectWords } from './utils/selectWords';
 export const $game = document.querySelector('.game') as HTMLDivElement;
 export const $word = document.querySelector('.word') as HTMLTableElement;
 
-generateWordBlocks($word);
-
 interface GameActions {
   [key: string]: () => void;
 }
@@ -18,6 +16,7 @@ const gameActions: GameActions = {
   ArrowRight: blockToRight,
   ArrowLeft: blocktoLeft,
   Enter: submitWord,
+  Backspace: clearBlock,
 };
 
 // export interface Palavra {
@@ -29,6 +28,8 @@ const csvFilePath = './assets/files/data.csv';
 const wordsFromData = await getWords(csvFilePath);
 
 console.log('palavras do data: ', wordsFromData);
+
+generateWordBlocks($word); // mover para baixo do getWords
 
 const words = new Words(wordsFromData);
 
@@ -42,7 +43,7 @@ document.addEventListener('keydown', (event) => {
   console.log('event key: ', event.key);
   if (event.key.length === 1) {
     if (isPressedKeyALetter(event.key)) {
-      addLetterToBlock();
+      addLetterToBlock(event.key);
       return;
     }
   }
@@ -60,8 +61,16 @@ function gameAction(key: string) {
   if (fn) fn();
 }
 
-function addLetterToBlock() {
+function addLetterToBlock(letter: string) {
   console.log('add letter to block');
+
+  const currentCellPosition: number = game.cellPosition;
+  const rows = $word.getElementsByTagName('tr');
+  const cells = rows[game.rowPosition].getElementsByTagName('td');
+
+  cells[currentCellPosition].textContent = letter.toUpperCase();
+
+  blockToRight();
 }
 
 function submitWord() {
@@ -96,4 +105,12 @@ function blockToRight() {
     cells[currentCellPosition + 1].setAttribute('class', 'selectedPosition');
     game.cellPosition = currentCellPosition + 1;
   }
+}
+
+function clearBlock() {
+  const currentCellPosition: number = game.cellPosition;
+  const rows = $word.getElementsByTagName('tr');
+  const cells = rows[game.rowPosition].getElementsByTagName('td');
+
+  cells[currentCellPosition].textContent = '';
 }
