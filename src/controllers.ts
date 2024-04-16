@@ -88,7 +88,55 @@ function submitWord(
   currentCellPosition: number,
   cells: HTMLCollectionOf<HTMLTableCellElement>,
 ) {
-  console.log('submit this word try (word validator needed)');
+  // verificar se todas as células estão preenchidas
+  // pegar as cells do row e juntar letras
+  // verificar se a palavra é válida (procurar palavra na lista do words)
+  // verificar se a palavra resultante é a palavra escolhida
+  // se não é valida, não fazer nada (depoiis a gente faz alguma animação de falha pro user)
+  console.log('submite word');
+
+  let guessedWord = '';
+  let isGuessedWordInvalid = false;
+
+  for (let i = 0; i < cells.length; i++) {
+    if (!cells[i].textContent) {
+      isGuessedWordInvalid = true;
+      break;
+    }
+    console.log('cell value: ', cells[i].textContent);
+    guessedWord += cells[i].textContent;
+  }
+
+  if (isGuessedWordInvalid) return console.log('palavra incompleta');
+
+  console.log('guessed word: ', guessedWord);
+
+  if (!words.words.includes(guessedWord.toLowerCase()))
+    return console.log('palavra nao esta no data');
+
+  if (!selectedWords.includes(guessedWord.toLowerCase())) return goToNextRow();
+
+  game.numOfGuessedWords++;
+
+  if (game.numOfGuessedWords === game.selectedWords.length)
+    return console.log('acertou todas as palavras!');
+
+  goToNextRow(); // vai ser usado apenas se houver 2+ palavras a serem adivinhadas
+}
+
+function goToNextRow() {
+  console.log('próxima palavra');
+  if (isTheLastRow()) return endGame();
+  game.rowPosition++;
+}
+
+function endGame() {
+  console.log('That was your last chance!');
+}
+
+function isTheLastRow() {
+  const numOfRows = $word.getElementsByTagName('tr').length;
+  return game.rowPosition === numOfRows - 1;
 }
 
 function blocktoLeft(
