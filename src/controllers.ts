@@ -2,6 +2,7 @@ console.log('Controllers.ts is here!');
 
 import { Words, Game } from './game';
 import { generateWordBlocks } from './utils/generateWordBlocks';
+import { getCells } from './utils/getCells';
 import { getWords } from './utils/getWords';
 import { selectWords } from './utils/selectWords';
 
@@ -9,8 +10,16 @@ export const $game = document.querySelector('.game') as HTMLDivElement;
 export const $word = document.querySelector('.word') as HTMLTableElement;
 
 interface GameActions {
-  [key: string]: () => void;
+  [key: string]: (
+    currentCellPosition: number,
+    cells: HTMLCollectionOf<HTMLTableCellElement>,
+  ) => void;
 }
+
+type fun = (
+  currentCellPosition: number,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) => void;
 
 const gameActions: GameActions = {
   ArrowRight: blockToRight,
@@ -56,9 +65,11 @@ function isPressedKeyALetter(key: string) {
 }
 
 function gameAction(key: string) {
-  const fn = gameActions[key];
-  console.log('fn value: ', fn);
-  if (fn) fn();
+  const fn: fun = gameActions[key];
+  // console.log('fn value: ', fn);
+  const currentCellPosition = game.cellPosition;
+  const cells = getCells(game, $word);
+  if (fn) fn(currentCellPosition, cells);
 }
 
 function addLetterToBlock(letter: string) {
@@ -70,21 +81,27 @@ function addLetterToBlock(letter: string) {
 
   cells[currentCellPosition].textContent = letter.toUpperCase();
 
-  blockToRight();
+  blockToRight(game.cellPosition, getCells(game, $word));
 }
 
-function submitWord() {
+function submitWord(
+  currentCellPosition: number,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) {
   console.log('submit this word try (word validator needed)');
 }
 
-function blocktoLeft() {
+function blocktoLeft(
+  currentCellPosition: number,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) {
   console.log('move block used to left');
 
-  const currentCellPosition: number = game.cellPosition;
-  const rows = $word.getElementsByTagName('tr');
-  console.log('number of rows: ', rows.length);
+  // const currentCellPosition: number = game.cellPosition;
+  // const rows = $word.getElementsByTagName('tr');
+  // console.log('number of rows: ', rows.length);
 
-  const cells = rows[game.rowPosition].getElementsByTagName('td');
+  // const cells = rows[game.rowPosition].getElementsByTagName('td');
 
   if (currentCellPosition > 0) {
     cells[currentCellPosition].removeAttribute('class');
@@ -93,24 +110,35 @@ function blocktoLeft() {
   }
 }
 
-function blockToRight() {
+function blockToRight(
+  currentCellPosition: number,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) {
   console.log('move block used to right');
 
-  const currentCellPosition: number = game.cellPosition;
-  const rows = $word.getElementsByTagName('tr');
-  const cells = rows[game.rowPosition].getElementsByTagName('td');
+  // const currentCellPosition: number = game.cellPosition;
+  // const rows = $word.getElementsByTagName('tr');
+  // const cells = rows[game.rowPosition].getElementsByTagName('td');
 
-  if (currentCellPosition < cells.length - 1) {
-    cells[currentCellPosition].removeAttribute('class');
-    cells[currentCellPosition + 1].setAttribute('class', 'selectedPosition');
-    game.cellPosition = currentCellPosition + 1;
+  // const cells = getCells(game, $word);
+
+  if (game.cellPosition < cells.length - 1) {
+    cells[game.cellPosition].removeAttribute('class');
+    cells[game.cellPosition + 1].setAttribute('class', 'selectedPosition');
+    game.cellPosition = game.cellPosition + 1;
   }
 }
 
-function clearBlock() {
-  const currentCellPosition: number = game.cellPosition;
-  const rows = $word.getElementsByTagName('tr');
-  const cells = rows[game.rowPosition].getElementsByTagName('td');
+function clearBlock(
+  currentCellPosition: number,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) {
+  // const currentCellPosition: number = game.cellPosition;
+  // const rows = $word.getElementsByTagName('tr');
+  // const cells = rows[game.rowPosition].getElementsByTagName('td');
 
-  cells[currentCellPosition].textContent = '';
+  // const cells = getCells(game, $word);
+  // selectedCell.textContent = '';
+  cells[game.cellPosition].textContent = '';
+  // cells[currentCellPosition].textContent = '';
 }
