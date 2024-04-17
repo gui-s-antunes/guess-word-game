@@ -32,7 +32,8 @@ const gameActions: GameActions = {
 //   [key: string]: number;
 // }
 
-const csvFilePath = './assets/files/data.csv';
+// const csvFilePath = './assets/files/data.csv';
+const csvFilePath = './assets/files/profiles.csv';
 
 const wordsFromData = await getWords(csvFilePath);
 
@@ -114,20 +115,38 @@ function submitWord(
   if (!words.words.includes(guessedWord.toLowerCase()))
     return console.log('palavra nao esta no data');
 
-  if (!selectedWords.includes(guessedWord.toLowerCase())) return goToNextRow();
+  if (!selectedWords.includes(guessedWord.toLowerCase()))
+    return goToNextRow(currentCellPosition, cells);
 
   game.numOfGuessedWords++;
 
   if (game.numOfGuessedWords === game.selectedWords.length)
     return console.log('acertou todas as palavras!');
 
-  goToNextRow(); // vai ser usado apenas se houver 2+ palavras a serem adivinhadas
+  goToNextRow(currentCellPosition, cells); // vai ser usado apenas se houver 2+ palavras a serem adivinhadas
 }
 
-function goToNextRow() {
+function goToNextRow(
+  currentCellPosition: number,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) {
   console.log('próxima palavra');
   if (isTheLastRow()) return endGame();
+  changeSelectedBlock(currentCellPosition, cells);
+  // game.rowPosition++;
+}
+
+function changeSelectedBlock(
+  currentCellPosition: number,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) {
+  cells[currentCellPosition].removeAttribute('class');
   game.rowPosition++;
+  game.cellPosition = 0;
+
+  const newCells = getCells(game, $word);
+
+  newCells[game.cellPosition].setAttribute('class', 'selectedPosition');
 }
 
 function endGame() {
