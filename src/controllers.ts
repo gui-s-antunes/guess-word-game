@@ -4,6 +4,7 @@ import { Words, Game } from './game';
 import { generateWordBlocks } from './utils/generateWordBlocks';
 import { getCells } from './utils/getCells';
 import { getWords } from './utils/getWords';
+import { removeAccents } from './utils/removeAccents';
 import { selectWords } from './utils/selectWords';
 
 export const $game = document.querySelector('.game') as HTMLDivElement;
@@ -45,9 +46,17 @@ const words = new Words(wordsFromData);
 
 const selectedWords = selectWords(words.words); //(words, numofwords)
 
+let selectedWordsWithoutAccent: string[] = [];
+
+const selectedWordsHaveAccents = haveSelectedWordsAccents(selectedWords);
+
+if (selectedWordsHaveAccents)
+  selectedWordsWithoutAccent = [...removeAccents(selectedWords)];
+
 const game = new Game(selectedWords);
 
 console.log('Palavras escolhidas: ', selectedWords);
+console.log('Palavras sem acento: ', selectedWordsWithoutAccent);
 
 document.addEventListener('keydown', (event) => {
   console.log('event key: ', event.key);
@@ -60,6 +69,17 @@ document.addEventListener('keydown', (event) => {
 
   gameAction(event.key);
 });
+
+function haveSelectedWordsAccents(selectedWords: string[]): boolean {
+  let hasAccents = false;
+  for (let i = 0; i < selectedWords.length; i++) {
+    // const slapora = selectedWords[i].match(/[^a-z]/i);
+    // console.log('slapohra: ', slapora);
+    if (selectedWords[i].match(/[^a-z]/i)) hasAccents = true;
+  }
+
+  return hasAccents;
+}
 
 function isPressedKeyALetter(key: string) {
   return key.match(/[a-z]/i);
@@ -115,6 +135,7 @@ function submitWord(
   if (!words.words.includes(guessedWord.toLowerCase()))
     return console.log('palavra nao esta no data');
 
+  // change to game.selectedWords.includes()
   if (!selectedWords.includes(guessedWord.toLowerCase()))
     return goToNextRow(currentCellPosition, cells);
 
