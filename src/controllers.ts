@@ -44,15 +44,21 @@ generateWordBlocks($word); // mover para baixo do getWords
 
 const words = new Words(wordsFromData);
 
+console.log('iniciou remoção dos acentos');
+const wordsWithoutAccent = removeAccents(words.words);
+console.log('sem acento: ', wordsWithoutAccent);
+console.log('acabou remoção dos acentos');
+
 const selectedWords = selectWords(words.words); //(words, numofwords)
 
 let selectedWordsWithoutAccent: string[] = [];
 
-const selectedWordsHaveAccents = haveSelectedWordsAccents(selectedWords);
+// const selectedWordsHaveAccents = haveSelectedWordsAccents(selectedWords);
 
-if (selectedWordsHaveAccents)
-  selectedWordsWithoutAccent = [...removeAccents(selectedWords)];
+// if (selectedWordsHaveAccents)
+selectedWordsWithoutAccent = [...removeAccents(selectedWords)];
 
+// ideal é colocar a sem acento também
 const game = new Game(selectedWords);
 
 console.log('Palavras escolhidas: ', selectedWords);
@@ -70,16 +76,16 @@ document.addEventListener('keydown', (event) => {
   gameAction(event.key);
 });
 
-function haveSelectedWordsAccents(selectedWords: string[]): boolean {
-  let hasAccents = false;
-  for (let i = 0; i < selectedWords.length; i++) {
-    // const slapora = selectedWords[i].match(/[^a-z]/i);
-    // console.log('slapohra: ', slapora);
-    if (selectedWords[i].match(/[^a-z]/i)) hasAccents = true;
-  }
+// function haveSelectedWordsAccents(selectedWords: string[]): boolean {
+//   let hasAccents = false;
+//   for (let i = 0; i < selectedWords.length; i++) {
+//     // const slapora = selectedWords[i].match(/[^a-z]/i);
+//     // console.log('slapohra: ', slapora);
+//     if (selectedWords[i].match(/[^a-z]/i)) hasAccents = true;
+//   }
 
-  return hasAccents;
-}
+//   return hasAccents;
+// }
 
 function isPressedKeyALetter(key: string) {
   return key.match(/[a-z]/i);
@@ -132,19 +138,47 @@ function submitWord(
 
   console.log('guessed word: ', guessedWord);
 
-  if (!words.words.includes(guessedWord.toLowerCase()))
+  if (!wordsWithoutAccent.includes(guessedWord.toLowerCase()))
     return console.log('palavra nao esta no data');
 
   // change to game.selectedWords.includes()
-  if (!selectedWords.includes(guessedWord.toLowerCase()))
+  console.log('selectedwords without accents: ', selectedWordsWithoutAccent);
+  console.log('guessed word lowercase: ', guessedWord.toLowerCase());
+  if (!selectedWordsWithoutAccent.includes(guessedWord.toLowerCase()))
     return goToNextRow(currentCellPosition, cells);
 
+  if (selectedWordsWithoutAccent.length)
+    addAccentToGuessedWord(guessedWord.toLowerCase(), cells);
+
   game.numOfGuessedWords++;
-
-  if (game.numOfGuessedWords === game.selectedWords.length)
-    return console.log('acertou todas as palavras!');
-
   goToNextRow(currentCellPosition, cells); // vai ser usado apenas se houver 2+ palavras a serem adivinhadas
+}
+
+function addAccentToGuessedWord(
+  guessedWord: string,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) {
+  const guessedWordChars = [...guessedWord];
+  for (let i = 0; i < selectedWords.length; i++) {
+    if (selectedWordsWithoutAccent[i] !== guessedWord) continue;
+
+    for (let j = 0; j < selectedWords[i].length; j++) {
+      if (selectedWords[i][j] === guessedWordChars[j]) continue;
+      guessedWordChars[j] = selectedWords[i][j];
+    }
+  }
+  const guessedWordWithAccent = guessedWordChars.join('');
+  blocksToGetAccent(guessedWordWithAccent, cells);
+}
+
+function blocksToGetAccent(
+  guessedWordWithAccent: string,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) {
+  for (let i = 0; i < cells.length; i++) {
+    if (guessedWordWithAccent[i] === cells[i].textContent) continue;
+    cells[i].textContent = guessedWordWithAccent[i].toUpperCase();
+  }
 }
 
 function goToNextRow(
