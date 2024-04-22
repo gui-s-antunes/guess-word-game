@@ -186,6 +186,7 @@ function goToNextRow(
   cells: HTMLCollectionOf<HTMLTableCellElement>,
 ) {
   console.log('próxima palavra');
+  if (game.numOfGuessedWords === selectedWords.length) return clearGame();
   if (isTheLastRow()) return endGame();
   changeSelectedBlock(currentCellPosition, cells);
   // game.rowPosition++;
@@ -202,6 +203,10 @@ function changeSelectedBlock(
   const newCells = getCells(game, $word);
 
   newCells[game.cellPosition].setAttribute('class', 'selectedPosition');
+}
+
+function clearGame() {
+  console.log('You matched the word!');
 }
 
 function endGame() {
