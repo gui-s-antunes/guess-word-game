@@ -61,10 +61,13 @@ selectedWordsWithoutAccent = [...removeAccents(selectedWords)];
 // ideal é colocar a sem acento também
 const game = new Game(selectedWords);
 
+let gameIsRunning = true;
+
 console.log('Palavras escolhidas: ', selectedWords);
 console.log('Palavras sem acento: ', selectedWordsWithoutAccent);
 
 document.addEventListener('keydown', (event) => {
+  if (!gameIsRunning) return;
   console.log('event key: ', event.key);
   if (event.key.length === 1) {
     if (isPressedKeyALetter(event.key)) {
@@ -121,6 +124,8 @@ function submitWord(
   // verificar se a palavra resultante é a palavra escolhida
   // se não é valida, não fazer nada (depoiis a gente faz alguma animação de falha pro user)
   console.log('submite word');
+
+  gameIsRunning = false;
 
   let guessedWord = '';
   let isGuessedWordInvalid = false;
@@ -181,14 +186,23 @@ function blocksToGetAccent(
   }
 }
 
+function removeSelectedCell(
+  currentCellPosition: number,
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+) {
+  cells[currentCellPosition].removeAttribute('class');
+}
+
 function goToNextRow(
   currentCellPosition: number,
   cells: HTMLCollectionOf<HTMLTableCellElement>,
 ) {
+  removeSelectedCell(currentCellPosition, cells);
   console.log('próxima palavra');
   if (game.numOfGuessedWords === selectedWords.length) return clearGame();
   if (isTheLastRow()) return endGame();
   changeSelectedBlock(currentCellPosition, cells);
+  gameIsRunning = true;
   // game.rowPosition++;
 }
 
