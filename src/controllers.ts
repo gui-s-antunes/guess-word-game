@@ -185,8 +185,6 @@ function checkCorrectLetters(
           indexValue,
         );
 
-        console.log('indexValue depois: ', indexValue);
-
         if (indexValue === -1) continue;
 
         if (
@@ -206,11 +204,9 @@ function checkCorrectLetters(
       if (cont === 0) continue;
 
       guessedWordChars.forEach((char, index) => {
-        if (char === cells[index].textContent) {
-          console.log('yellow blocks foreach!');
-          console.log('char: ', char);
-          console.log('cells[index].textContent: ', cells[index].textContent);
+        if (cont > 0 && char === letterToCheck) {
           cells[index].setAttribute('color', 'yellowBlock');
+          cont--;
         }
       });
     }
