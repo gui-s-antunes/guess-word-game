@@ -143,14 +143,18 @@ function submitWord(
 
   console.log('guessed word: ', guessedWord);
 
-  if (!wordsWithoutAccent.includes(guessedWord.toLowerCase()))
+  if (!wordsWithoutAccent.includes(guessedWord.toLowerCase())) {
+    gameIsRunning = true;
     return console.log('palavra nao esta no data');
+  }
 
   // change to game.selectedWords.includes()
   console.log('selectedwords without accents: ', selectedWordsWithoutAccent);
   console.log('guessed word lowercase: ', guessedWord.toLowerCase());
-  if (!selectedWordsWithoutAccent.includes(guessedWord.toLowerCase()))
+  if (!selectedWordsWithoutAccent.includes(guessedWord.toLowerCase())) {
+    checkCorrectLetters(cells, guessedWord.toLowerCase());
     return goToNextRow(currentCellPosition, cells);
+  }
 
   if (selectedWordsWithoutAccent.length)
     addAccentToGuessedWord(guessedWord.toLowerCase(), cells);
@@ -158,6 +162,66 @@ function submitWord(
   game.numOfGuessedWords++;
   goToNextRow(currentCellPosition, cells); // vai ser usado apenas se houver 2+ palavras a serem adivinhadas
 }
+
+function checkCorrectLetters(
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+  guessedWord: string,
+) {
+  for (let i = 0; i < selectedWordsWithoutAccent.length; i++) {
+    const guessedWordChars = [...guessedWord];
+
+    let letterToCheck = '';
+
+    for (let j = 0; j < guessedWordChars.length; j++) {
+      if (!guessedWordChars[j]) continue;
+
+      let indexValue = 0;
+      let cont = 0;
+      letterToCheck = guessedWordChars[j];
+
+      while (indexValue !== -1) {
+        indexValue = selectedWordsWithoutAccent[i].indexOf(
+          letterToCheck,
+          indexValue,
+        );
+
+        console.log('indexValue depois: ', indexValue);
+
+        if (indexValue === -1) continue;
+
+        if (
+          guessedWordChars[indexValue] ===
+          selectedWordsWithoutAccent[i][indexValue]
+        ) {
+          cells[indexValue].setAttribute('color', 'greenBlock');
+          guessedWordChars[indexValue] = '';
+          indexValue++;
+          continue;
+        }
+
+        cont++;
+        indexValue++;
+      }
+
+      if (cont === 0) continue;
+
+      guessedWordChars.forEach((char, index) => {
+        if (char === cells[index].textContent) {
+          console.log('yellow blocks foreach!');
+          console.log('char: ', char);
+          console.log('cells[index].textContent: ', cells[index].textContent);
+          cells[index].setAttribute('color', 'yellowBlock');
+        }
+      });
+    }
+  }
+}
+
+// // a letter that doesn't exist in the word
+// function checkIncorrectLetters() {}
+
+// // a letter that exists but it's on the word position
+// function checkIncorrectPositionLetters() {}
 
 function addAccentToGuessedWord(
   guessedWord: string,
