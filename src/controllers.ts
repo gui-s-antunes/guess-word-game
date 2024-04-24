@@ -262,8 +262,15 @@ function goToNextRow(
   if (game.numOfGuessedWords === selectedWords.length) return clearGame();
   if (isTheLastRow()) return endGame();
   changeSelectedBlock(currentCellPosition, cells);
+  activeNewRow();
   gameIsRunning = true;
   // game.rowPosition++;
+}
+
+// to know which rows (chances) the player used
+function activeNewRow() {
+  const rows = $word.getElementsByTagName('tr');
+  rows[game.rowPosition].setAttribute('class', 'usedRow');
 }
 
 function changeSelectedBlock(
