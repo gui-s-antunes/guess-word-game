@@ -334,6 +334,8 @@ function clearBlock(
   currentCellPosition: number,
   cells: HTMLCollectionOf<HTMLTableCellElement>,
 ) {
+  if (cells[game.cellPosition].textContent === '')
+    return blocktoLeft(currentCellPosition, cells);
   // const currentCellPosition: number = game.cellPosition;
   // const rows = $word.getElementsByTagName('tr');
   // const cells = rows[game.rowPosition].getElementsByTagName('td');
