@@ -3,9 +3,14 @@
   --light-color: #f3f3f3;
   --medium-color: #bbb;
   --border-color: #ddd;
-  --main-color: #0074D9;
-  --error-color: #FF4136;
+  --main-color: #0074d9;
+  --error-color: #ff4136;
   --border-radius: 4px;
+  --drab-dark-brown-color: #474723;
+  --drab-dark-brown-second-color: #494331;
+  --moss-green-color: #8f8f6a;
+  --dutch-white-color: #d6d6b1;
+  --fern-green-color: #325d2f;
 }
 
 * {
@@ -16,7 +21,7 @@
 }
 
 body {
-  background-color: var(--dark-color);
+  background-color: var(--drab-dark-brown-color);
   font-family: sans-serif;
   color: var(--dark-color);
 }
@@ -28,77 +33,35 @@ body {
   margin: 50px auto;
 }
 
-.form {
-  padding: 20px;
-  background: #fff;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 0 5px rgba(0, 0, 0, .2);
-  border-radius: var(--border-radius);
-  border: 1px solid var(--border-color);
-  margin: auto 20px;
+.word {
+  border-collapse: separate;
+  border-spacing: 10px 10px;
 }
 
-.form h2 {
-  padding: 10px 0 30px;
+.word tr td {
   text-align: center;
+  color: var(--drab-dark-brown-color);
+  font-size: 15vh;
+  font-weight: bolder;
+  padding: 0;
+  /* padding: 10px; */
+  /* min-width: 20px; */
+  height: 20vh;
+  width: 20vh;
+  /* min-height: 400px; */
+  border-radius: 10px;
+  background-color: var(--moss-green-color);
 }
 
-.form .form-fields {
-  margin: 0 0 20px;
+.word .selectedPosition {
+  background-color: var(--dutch-white-color);
 }
 
-.form label {
-  display: block;
-  font-size: 10pt;
-  color: #999;
+.word tr [color='greenBlock'] {
+  background-color: #426a40;
 }
 
-::placeholder {
-  color: #ddd;
-  font-size: 10pt;
-}
-
-.form input[type] {
-  width: 100%;
-  border: 1px solid var(--border-color);
-  font-size: 18px;
-  padding: 5px 10px;
-  border-radius: var(--border-radius);
-  transition: border 300ms ease-in-out;
-}
-
-.form input[type]:focus {
-  border-color: var(--medium-color);
-}
-
-.form button {
-  border: none;
-  background: var(--main-color);
-  padding: 10px 20px;
-  cursor: pointer;
-  font-weight: 700;
-  color: var(--light-color);
-  border-radius: var(--border-radius);
-  transition: filter 300ms ease-in-out;
-}
-
-.form button:hover {
-  filter: brightness(80%);
-}
-
-.form .error-message {
-  font-size: 9pt;
-  padding: 5px 0;
-  color: var(--error-color);
-  font-style: italic;
-  display: none;
-}
-
-.form .show-error-message .error-message {
-  display: block;
-}
-
-.form .show-error-message input[type] {
-  border-color: var(--error-color);
+.word tr [color='yellowBlock'] {
+  /* color: #d3c317; */
+  background-color: #898236;
 }
