@@ -191,6 +191,8 @@ function checkCorrectLetters(
 
         if (indexValue === -1) continue;
 
+        if (guessedWordChars[indexValue] === '') break;
+
         if (
           guessedWordChars[indexValue] ===
           selectedWordsWithoutAccent[i][indexValue]
