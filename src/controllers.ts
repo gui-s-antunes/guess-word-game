@@ -139,7 +139,10 @@ function submitWord(
     guessedWord += cells[i].textContent;
   }
 
-  if (isGuessedWordInvalid) return console.log('palavra incompleta');
+  if (isGuessedWordInvalid) {
+    gameIsRunning = true;
+    return console.log('palavra incompleta');
+  }
 
   console.log('guessed word: ', guessedWord);
 
@@ -171,6 +174,7 @@ function checkCorrectLetters(
     const guessedWordChars = [...guessedWord];
 
     let letterToCheck = '';
+    const colorsPos: string[] = [];
 
     for (let j = 0; j < guessedWordChars.length; j++) {
       if (!guessedWordChars[j]) continue;
@@ -191,7 +195,8 @@ function checkCorrectLetters(
           guessedWordChars[indexValue] ===
           selectedWordsWithoutAccent[i][indexValue]
         ) {
-          cells[indexValue].setAttribute('color', 'greenBlock');
+          // cells[indexValue].setAttribute('color', 'greenBlock');
+          colorsPos[indexValue] = 'greenBlock';
           guessedWordChars[indexValue] = '';
           indexValue++;
           continue;
@@ -205,11 +210,25 @@ function checkCorrectLetters(
 
       guessedWordChars.forEach((char, index) => {
         if (cont > 0 && char === letterToCheck) {
-          cells[index].setAttribute('color', 'yellowBlock');
+          // cells[index].setAttribute('color', 'yellowBlock');
+          colorsPos[index] = 'yellowBlock';
           cont--;
         }
       });
     }
+
+    addColorAttributeToBlocks(cells, colorsPos);
+  }
+}
+
+function addColorAttributeToBlocks(
+  cells: HTMLCollectionOf<HTMLTableCellElement>,
+  colorsPos: string[],
+) {
+  for (let i = 0; i < cells.length; i++) {
+    setTimeout(() => {
+      cells[i].setAttribute('color', colorsPos[i] || 'missedBlock');
+    }, 0.3 * i * 1000);
   }
 }
 
