@@ -13,7 +13,39 @@
   --fern-green-color: #325d2f;
   --reseda-green-color: #6c6c4b;
   --olive-color: #898236;
-  --hunter-green: #426a40;
+  --hunter-green-color: #426a40;
+}
+
+@keyframes blockFlip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+@keyframes greenBlock {
+  50% {
+    background-color: var(--moss-green-color);
+  }
+  51%,
+  100% {
+    background-color: var(--hunter-green-color);
+  }
+}
+
+@keyframes yellowBlock {
+  50% {
+    background-color: var(--moss-green-color);
+  }
+  51%,
+  100% {
+    background-color: var(--olive-color);
+  }
 }
 
 * {
@@ -47,11 +79,8 @@ body {
   font-size: 15vh;
   font-weight: bolder;
   padding: 0;
-  /* padding: 10px; */
-  /* min-width: 20px; */
   height: 20vh;
   width: 20vh;
-  /* min-height: 400px; */
   border-radius: 10px;
   background-color: var(--reseda-green-color);
 }
@@ -65,10 +94,13 @@ body {
 }
 
 .word tr [color='greenBlock'] {
-  background-color: var(--hunter-green);
+  animation: greenBlock 0.5s linear forwards, blockFlip 0.5s linear forwards;
 }
 
 .word tr [color='yellowBlock'] {
-  /* color: #d3c317; */
-  background-color: var(--olive-color);
+  animation: yellowBlock 0.5s linear forwards, blockFlip 0.5s linear forwards;
+}
+
+.word tr [color='missedBlock'] {
+  animation: blockFlip 0.5s linear forwards;
 }
