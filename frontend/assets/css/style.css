@@ -60,7 +60,7 @@ body {
   background-color: var(--moss-green-color);
 }
 
-.word .selectedPosition {
+.word tr .selectedPosition {
   background-color: var(--dutch-white-color);
 }
 
