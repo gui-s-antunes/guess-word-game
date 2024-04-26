@@ -114,7 +114,15 @@ function addLetterToBlock(letter: string) {
   blockToRight(game.cellPosition, getCells(game, $word));
 }
 
-function submitWord(
+function pauseGame() {
+  gameIsRunning = false;
+}
+
+function resumeGame() {
+  gameIsRunning = true;
+}
+
+async function submitWord(
   currentCellPosition: number,
   cells: HTMLCollectionOf<HTMLTableCellElement>,
 ) {
@@ -125,7 +133,7 @@ function submitWord(
   // se não é valida, não fazer nada (depoiis a gente faz alguma animação de falha pro user)
   console.log('submite word');
 
-  gameIsRunning = false;
+  pauseGame();
 
   let guessedWord = '';
   let isGuessedWordInvalid = false;
@@ -136,34 +144,34 @@ function submitWord(
       break;
     }
     console.log('cell value: ', cells[i].textContent);
-    guessedWord += cells[i].textContent;
+    guessedWord += cells[i].textContent?.toLowerCase();
   }
 
   if (isGuessedWordInvalid) {
-    gameIsRunning = true;
+    resumeGame();
     return console.log('palavra incompleta');
   }
 
   console.log('guessed word: ', guessedWord);
 
-  if (!wordsWithoutAccent.includes(guessedWord.toLowerCase())) {
-    gameIsRunning = true;
+  if (!wordsWithoutAccent.includes(guessedWord)) {
+    resumeGame();
     return console.log('palavra nao esta no data');
   }
 
-  // change to game.selectedWords.includes()
-  console.log('selectedwords without accents: ', selectedWordsWithoutAccent);
-  console.log('guessed word lowercase: ', guessedWord.toLowerCase());
-  if (!selectedWordsWithoutAccent.includes(guessedWord.toLowerCase())) {
-    checkCorrectLetters(cells, guessedWord.toLowerCase());
-    return goToNextRow(currentCellPosition, cells);
-  }
+  checkCorrectLetters(cells, guessedWord);
 
-  if (selectedWordsWithoutAccent.length)
-    addAccentToGuessedWord(guessedWord.toLowerCase(), cells);
+  setTimeout(() => {
+    if (!selectedWordsWithoutAccent.includes(guessedWord)) {
+      return goToNextRow(currentCellPosition, cells);
+    }
 
-  game.numOfGuessedWords++;
-  goToNextRow(currentCellPosition, cells); // vai ser usado apenas se houver 2+ palavras a serem adivinhadas
+    if (selectedWordsWithoutAccent.length)
+      addAccentToGuessedWord(guessedWord.toLowerCase(), cells);
+
+    game.numOfGuessedWords++;
+    goToNextRow(currentCellPosition, cells); // vai ser usado apenas se houver 2+ palavras a serem adivinhadas
+  }, 2500);
 }
 
 function checkCorrectLetters(
@@ -284,7 +292,7 @@ function goToNextRow(
   if (isTheLastRow()) return endGame();
   changeSelectedBlock(currentCellPosition, cells);
   activeNewRow();
-  gameIsRunning = true;
+  resumeGame();
   // game.rowPosition++;
 }
 
