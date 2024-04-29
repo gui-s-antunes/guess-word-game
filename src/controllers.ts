@@ -58,8 +58,11 @@ let selectedWordsWithoutAccent: string[] = [];
 // if (selectedWordsHaveAccents)
 selectedWordsWithoutAccent = [...removeAccents(selectedWords)];
 
+createTables(1);
+const tables = getTables();
+
 // ideal é colocar a sem acento também
-const game = new Game(selectedWords);
+const game = new Game(selectedWords, tables);
 
 let gameIsRunning = true;
 
@@ -89,6 +92,23 @@ document.addEventListener('keydown', (event) => {
 
 //   return hasAccents;
 // }
+
+// creates a number of table games
+function createTables(numOfTables: number) {
+  for (let i = 0; i < numOfTables; i++) {
+    const tbl = document.createElement('table');
+    tbl.setAttribute('class', 'word');
+    generateWordBlocks(tbl);
+    $game.appendChild(tbl);
+  }
+}
+
+// get all the table games
+function getTables(): HTMLCollectionOf<HTMLTableElement> {
+  return document.getElementsByClassName(
+    'word',
+  ) as HTMLCollectionOf<HTMLTableElement>;
+}
 
 function isPressedKeyALetter(key: string) {
   return key.match(/[a-z]/i);
