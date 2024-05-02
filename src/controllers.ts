@@ -8,17 +8,17 @@ import { removeAccents } from './utils/removeAccents';
 import { selectWords } from './utils/selectWords';
 
 export const $game = document.querySelector('.game') as HTMLDivElement;
-export const $word = document.querySelector('.word') as HTMLTableElement;
+// export const $word = document.querySelector('.word') as HTMLTableElement;
 
 interface GameActions {
   [key: string]: (
-    currentCellPosition: number,
+    // currentCellPosition: number,
     cells: HTMLCollectionOf<HTMLTableCellElement>,
   ) => void;
 }
 
 type fun = (
-  currentCellPosition: number,
+  // currentCellPosition: number,
   cells: HTMLCollectionOf<HTMLTableCellElement>,
 ) => void;
 
@@ -40,7 +40,7 @@ const wordsFromData = await getWords(csvFilePath);
 
 console.log('palavras do data: ', wordsFromData);
 
-generateWordBlocks($word); // mover para baixo do getWords
+// generateWordBlocks($word); // mover para baixo do getWords
 
 const words = new Words(wordsFromData);
 
@@ -62,7 +62,7 @@ createTables(1);
 const tables = getTables();
 
 // ideal é colocar a sem acento também
-const game = new Game(selectedWords, tables);
+const game = new Game(selectedWords, tables, 6, 5);
 
 let gameIsRunning = true;
 
@@ -94,11 +94,11 @@ document.addEventListener('keydown', (event) => {
 // }
 
 // creates a number of table games
-function createTables(numOfTables: number) {
+function createTables(numOfTables: number, rows?: number, cells?: number) {
   for (let i = 0; i < numOfTables; i++) {
     const tbl = document.createElement('table');
     tbl.setAttribute('class', 'word');
-    generateWordBlocks(tbl);
+    generateWordBlocks(tbl, rows, cells);
     $game.appendChild(tbl);
   }
 }
@@ -116,22 +116,59 @@ function isPressedKeyALetter(key: string) {
 
 function gameAction(key: string) {
   const fn: fun = gameActions[key];
-  // console.log('fn value: ', fn);
-  const currentCellPosition = game.cellPosition;
-  const cells = getCells(game, $word);
-  if (fn) fn(currentCellPosition, cells);
+  if (!fn) return;
+
+  if (key === 'Enter') {
+    if (!isBlocksFulfilled() || !isGuessedWordValid()) return;
+  }
+
+  for (let i = 0; i < game.tables.length; i++) {
+    const cells = getCells(game, game.tables[i]);
+    fn(cells);
+  }
+
+  if (key === 'Enter') {
+    if (isTheLastRow()) game.needsCheck = true;
+
+    setTimeout(() => {
+      game.rowPosition++;
+      game.cellPosition = 0;
+
+      if (!game.needsCheck) return resumeGame();
+
+      game.needsCheck = false;
+
+      // one of the tables (game word) was cleared! check if there's remaining to be cleared
+      if (isTheGameCleared()) return clearGame();
+
+      // the game was not cleared and there's no more rows remaining
+      if (game.rowPosition + 1 > game.numRows) return endGame();
+
+      // There's row remaining
+      resumeGame();
+
+      // // the game was cleared!
+    }, 2600);
+  }
+}
+
+// checks if the user cleared all the words
+function isTheGameCleared() {
+  return game.numOfGuessedWords === selectedWords.length;
 }
 
 function addLetterToBlock(letter: string) {
   console.log('add letter to block');
 
-  const currentCellPosition: number = game.cellPosition;
-  const rows = $word.getElementsByTagName('tr');
-  const cells = rows[game.rowPosition].getElementsByTagName('td');
+  for (let i = 0; i < game.tables.length; i++) {
+    const rows = game.tables[i].getElementsByTagName('tr');
+    const cells = rows[game.rowPosition].getElementsByTagName('td');
+    cells[game.cellPosition].textContent = letter.toUpperCase();
 
-  cells[currentCellPosition].textContent = letter.toUpperCase();
+    game.guessedLetters[game.cellPosition] = letter;
 
-  blockToRight(game.cellPosition, getCells(game, $word));
+    blockToRight(cells);
+  }
 }
 
 function pauseGame() {
@@ -142,56 +179,45 @@ function resumeGame() {
   gameIsRunning = true;
 }
 
-async function submitWord(
-  currentCellPosition: number,
-  cells: HTMLCollectionOf<HTMLTableCellElement>,
-) {
-  // verificar se todas as células estão preenchidas
-  // pegar as cells do row e juntar letras
-  // verificar se a palavra é válida (procurar palavra na lista do words)
-  // verificar se a palavra resultante é a palavra escolhida
-  // se não é valida, não fazer nada (depoiis a gente faz alguma animação de falha pro user)
-  console.log('submite word');
+// checks if user fullfil the blocks and word validator
+function isBlocksFulfilled() {
+  const isValid = true;
+  for (let i = 0; i < game.numCells; i++) {
+    if (!game.guessedLetters[i].length) return false;
+  }
+  return isValid;
+}
 
+function isGuessedWordValid() {
+  const isValid = true;
+  const guessedWord = game.guessedLetters.join('');
+  if (!wordsWithoutAccent.includes(guessedWord)) return false;
+  return isValid;
+}
+
+async function submitWord(cells: HTMLCollectionOf<HTMLTableCellElement>) {
   pauseGame();
 
-  let guessedWord = '';
-  let isGuessedWordInvalid = false;
-
-  for (let i = 0; i < cells.length; i++) {
-    if (!cells[i].textContent) {
-      isGuessedWordInvalid = true;
-      break;
-    }
-    console.log('cell value: ', cells[i].textContent);
-    guessedWord += cells[i].textContent?.toLowerCase();
-  }
-
-  if (isGuessedWordInvalid) {
-    resumeGame();
-    return console.log('palavra incompleta');
-  }
-
-  console.log('guessed word: ', guessedWord);
-
-  if (!wordsWithoutAccent.includes(guessedWord)) {
-    resumeGame();
-    return console.log('palavra nao esta no data');
-  }
+  const guessedWord = game.guessedLetters.join('');
 
   checkCorrectLetters(cells, guessedWord);
 
   setTimeout(() => {
-    if (!selectedWordsWithoutAccent.includes(guessedWord)) {
-      return goToNextRow(currentCellPosition, cells);
+    if (areAllTheCellsCorrect(cells)) {
+      addAccentToGuessedWord(guessedWord, cells);
+      game.numOfGuessedWords++;
+      game.needsCheck = true;
+      return;
     }
 
-    if (selectedWordsWithoutAccent.length)
-      addAccentToGuessedWord(guessedWord.toLowerCase(), cells);
-
-    game.numOfGuessedWords++;
-    goToNextRow(currentCellPosition, cells); // vai ser usado apenas se houver 2+ palavras a serem adivinhadas
+    goToNextRow(cells);
   }, 2500);
+}
+
+function areAllTheCellsCorrect(cells: HTMLCollectionOf<HTMLTableCellElement>) {
+  const cellsArray = Array.from(cells);
+
+  return cellsArray.every((td) => td.getAttribute('color') === 'greenBlock');
 }
 
 function checkCorrectLetters(
@@ -302,37 +328,36 @@ function removeSelectedCell(
   cells[currentCellPosition].removeAttribute('class');
 }
 
-function goToNextRow(
-  currentCellPosition: number,
-  cells: HTMLCollectionOf<HTMLTableCellElement>,
-) {
-  removeSelectedCell(currentCellPosition, cells);
-  console.log('próxima palavra');
-  if (game.numOfGuessedWords === selectedWords.length) return clearGame();
-  if (isTheLastRow()) return endGame();
-  changeSelectedBlock(currentCellPosition, cells);
-  activeNewRow();
-  resumeGame();
-  // game.rowPosition++;
+function goToNextRow(cells: HTMLCollectionOf<HTMLTableCellElement>) {
+  removeSelectedCell(game.cellPosition, cells);
+
+  if (isTheLastRow()) return;
+
+  changeSelectedBlock(cells, cells[0].parentNode as HTMLTableRowElement);
+
+  activeNewRow(cells[0].parentNode as HTMLTableRowElement);
 }
 
 // to know which rows (chances) the player used
-function activeNewRow() {
-  const rows = $word.getElementsByTagName('tr');
-  rows[game.rowPosition].setAttribute('class', 'usedRow');
+function activeNewRow(oldRow: HTMLTableRowElement) {
+  if (!oldRow.parentNode) return;
+  const newRow = oldRow.parentNode.children[oldRow.rowIndex + 1];
+  newRow.setAttribute('class', 'usedRow');
 }
 
 function changeSelectedBlock(
-  currentCellPosition: number,
   cells: HTMLCollectionOf<HTMLTableCellElement>,
+  row: HTMLTableRowElement,
 ) {
-  cells[currentCellPosition].removeAttribute('class');
-  game.rowPosition++;
-  game.cellPosition = 0;
+  cells[game.cellPosition].removeAttribute('class');
 
-  const newCells = getCells(game, $word);
+  if (!row.parentNode) return;
 
-  newCells[game.cellPosition].setAttribute('class', 'selectedPosition');
+  const newRow = row.parentNode.children[row.rowIndex + 1];
+
+  const newCells = newRow.getElementsByTagName('td');
+
+  newCells[0].setAttribute('class', 'selectedPosition');
 }
 
 function clearGame() {
@@ -340,18 +365,17 @@ function clearGame() {
 }
 
 function endGame() {
+  game.needsCheck = true;
   console.log('That was your last chance!');
 }
 
+// next row won't exist
+// this function is called after changed the rowPosition to the next one
 function isTheLastRow() {
-  const numOfRows = $word.getElementsByTagName('tr').length;
-  return game.rowPosition === numOfRows - 1;
+  return game.rowPosition === game.numRows - 1;
 }
 
-function blocktoLeft(
-  currentCellPosition: number,
-  cells: HTMLCollectionOf<HTMLTableCellElement>,
-) {
+function blocktoLeft(cells: HTMLCollectionOf<HTMLTableCellElement>) {
   console.log('move block used to left');
 
   // const currentCellPosition: number = game.cellPosition;
@@ -360,17 +384,14 @@ function blocktoLeft(
 
   // const cells = rows[game.rowPosition].getElementsByTagName('td');
 
-  if (currentCellPosition > 0) {
-    cells[currentCellPosition].removeAttribute('class');
-    cells[currentCellPosition - 1].setAttribute('class', 'selectedPosition');
-    game.cellPosition = currentCellPosition - 1;
+  if (game.cellPosition > 0) {
+    cells[game.cellPosition].removeAttribute('class');
+    cells[game.cellPosition - 1].setAttribute('class', 'selectedPosition');
+    game.cellPosition = game.cellPosition - 1;
   }
 }
 
-function blockToRight(
-  currentCellPosition: number,
-  cells: HTMLCollectionOf<HTMLTableCellElement>,
-) {
+function blockToRight(cells: HTMLCollectionOf<HTMLTableCellElement>) {
   console.log('move block used to right');
 
   // const currentCellPosition: number = game.cellPosition;
@@ -386,12 +407,8 @@ function blockToRight(
   }
 }
 
-function clearBlock(
-  currentCellPosition: number,
-  cells: HTMLCollectionOf<HTMLTableCellElement>,
-) {
-  if (cells[game.cellPosition].textContent === '')
-    return blocktoLeft(currentCellPosition, cells);
+function clearBlock(cells: HTMLCollectionOf<HTMLTableCellElement>) {
+  if (cells[game.cellPosition].textContent === '') return blocktoLeft(cells);
   // const currentCellPosition: number = game.cellPosition;
   // const rows = $word.getElementsByTagName('tr');
   // const cells = rows[game.rowPosition].getElementsByTagName('td');
@@ -400,4 +417,6 @@ function clearBlock(
   // selectedCell.textContent = '';
   cells[game.cellPosition].textContent = '';
   // cells[currentCellPosition].textContent = '';
+
+  game.guessedLetters[game.cellPosition] = '';
 }
