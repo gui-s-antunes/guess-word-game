@@ -50,7 +50,9 @@ const wordsWithoutAccent = removeAccents(words.words);
 console.log('sem acento: ', wordsWithoutAccent);
 console.log('acabou remoção dos acentos');
 
-const selectedWords = selectWords(words.words); //(words, numofwords)
+const numOfTables = 2;
+
+const selectedWords = selectWords(words.words, numOfTables); //(words, numofwords)
 
 let selectedWordsWithoutAccent: string[] = [];
 
@@ -59,7 +61,7 @@ let selectedWordsWithoutAccent: string[] = [];
 // if (selectedWordsHaveAccents)
 selectedWordsWithoutAccent = [...removeAccents(selectedWords)];
 
-createTables(2);
+createTables(numOfTables);
 const tables = getTables();
 
 // ideal é colocar a sem acento também
@@ -116,7 +118,7 @@ function getTables(): Table[] {
   const tablesInstanceList: Table[] = [];
 
   for (let i = 0; i < tables.length; i++) {
-    const tableInstance = new Table(tables[i]);
+    const tableInstance = new Table(tables[i], selectedWordsWithoutAccent[i]);
     tablesInstanceList.push(tableInstance);
   }
 
@@ -136,11 +138,13 @@ function gameAction(key: string) {
   }
 
   for (let i = 0; i < game.tables.length; i++) {
+    if (game.tables[i].isCleared) continue;
     const cells = getCells(game, game.tables[i].tableHTML);
     fn(game.tables[i], cells);
   }
 
   if (key === 'Enter') {
+    game.guessedLetters.splice(0, game.guessedLetters.length);
     if (isTheLastRow()) game.needsCheck = true;
 
     setTimeout(() => {
@@ -173,9 +177,11 @@ function isTheGameCleared() {
 function addLetterToBlock(letter: string) {
   console.log('add letter to block');
 
-  game.guessedLetters[game.tables[0].cellPosition] = letter;
-
   for (let i = 0; i < game.tables.length; i++) {
+    if (game.tables[i].isCleared) continue;
+
+    game.guessedLetters[game.tables[i].cellPosition] = letter;
+
     const rows = game.tables[i].tableHTML.getElementsByTagName('tr');
     const cells = rows[game.tables[i].rowPosition].getElementsByTagName('td');
     cells[game.tables[i].cellPosition].textContent = letter.toUpperCase();
@@ -218,10 +224,11 @@ async function submitWord(
 
   const guessedWord = game.guessedLetters.join('');
 
-  checkCorrectLetters(cells, guessedWord);
+  checkCorrectLetters(table, cells, guessedWord);
 
   setTimeout(() => {
     if (areAllTheCellsCorrect(cells)) {
+      table.isCleared = true;
       addAccentToGuessedWord(guessedWord, cells);
       game.numOfGuessedWords++;
       game.needsCheck = true;
@@ -239,60 +246,55 @@ function areAllTheCellsCorrect(cells: HTMLCollectionOf<HTMLTableCellElement>) {
 }
 
 function checkCorrectLetters(
+  table: Table,
   cells: HTMLCollectionOf<HTMLTableCellElement>,
   guessedWord: string,
 ) {
-  for (let i = 0; i < selectedWordsWithoutAccent.length; i++) {
-    const guessedWordChars = [...guessedWord];
+  // for (let i = 0; i < selectedWordsWithoutAccent.length; i++) {
+  const guessedWordChars = [...guessedWord];
 
-    let letterToCheck = '';
-    const colorsPos: string[] = [];
+  let letterToCheck = '';
+  const colorsPos: string[] = [];
 
-    for (let j = 0; j < guessedWordChars.length; j++) {
-      if (!guessedWordChars[j]) continue;
+  for (let j = 0; j < guessedWordChars.length; j++) {
+    if (!guessedWordChars[j]) continue;
 
-      let indexValue = 0;
-      let cont = 0;
-      letterToCheck = guessedWordChars[j];
+    let indexValue = 0;
+    let cont = 0;
+    letterToCheck = guessedWordChars[j];
 
-      while (indexValue !== -1) {
-        indexValue = selectedWordsWithoutAccent[i].indexOf(
-          letterToCheck,
-          indexValue,
-        );
+    while (indexValue !== -1) {
+      indexValue = table.selectedWord.indexOf(letterToCheck, indexValue);
 
-        if (indexValue === -1) continue;
+      if (indexValue === -1) continue;
 
-        if (guessedWordChars[indexValue] === '') break;
+      if (guessedWordChars[indexValue] === '') break;
 
-        if (
-          guessedWordChars[indexValue] ===
-          selectedWordsWithoutAccent[i][indexValue]
-        ) {
-          // cells[indexValue].setAttribute('color', 'greenBlock');
-          colorsPos[indexValue] = 'greenBlock';
-          guessedWordChars[indexValue] = '';
-          indexValue++;
-          continue;
-        }
-
-        cont++;
+      if (guessedWordChars[indexValue] === table.selectedWord[indexValue]) {
+        // cells[indexValue].setAttribute('color', 'greenBlock');
+        colorsPos[indexValue] = 'greenBlock';
+        guessedWordChars[indexValue] = '';
         indexValue++;
+        continue;
       }
 
-      if (cont === 0) continue;
-
-      guessedWordChars.forEach((char, index) => {
-        if (cont > 0 && char === letterToCheck) {
-          // cells[index].setAttribute('color', 'yellowBlock');
-          colorsPos[index] = 'yellowBlock';
-          cont--;
-        }
-      });
+      cont++;
+      indexValue++;
     }
 
-    addColorAttributeToBlocks(cells, colorsPos);
+    if (cont === 0) continue;
+
+    guessedWordChars.forEach((char, index) => {
+      if (cont > 0 && char === letterToCheck) {
+        // cells[index].setAttribute('color', 'yellowBlock');
+        colorsPos[index] = 'yellowBlock';
+        cont--;
+      }
+    });
   }
+
+  addColorAttributeToBlocks(cells, colorsPos);
+  // }
 }
 
 function addColorAttributeToBlocks(
