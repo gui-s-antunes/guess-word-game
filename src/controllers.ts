@@ -8,7 +8,10 @@ import { removeAccents } from './utils/removeAccents';
 import { selectWords } from './utils/selectWords';
 
 export const $game = document.querySelector('.game') as HTMLDivElement;
-// export const $word = document.querySelector('.word') as HTMLTableElement;
+export const $menu = document.querySelector('.menu') as HTMLDivElement;
+export const $menuButtons = $menu.getElementsByTagName(
+  'button',
+) as HTMLCollectionOf<HTMLButtonElement>;
 
 interface GameActions {
   [key: string]: (
@@ -50,7 +53,23 @@ const wordsWithoutAccent = removeAccents(words.words);
 console.log('sem acento: ', wordsWithoutAccent);
 console.log('acabou remoção dos acentos');
 
-const numOfTables = 2;
+function getNumOfGames(urlParams: URLSearchParams) {
+  if (urlParams.get('games') === '2') return 2;
+  if (urlParams.get('games') === '4') return 4;
+
+  return 1;
+}
+
+function isThereGamesParam(urlParams: URLSearchParams) {
+  return urlParams.has('games');
+}
+
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+
+if (isThereGamesParam(urlParams)) $menu.style.display = 'none';
+
+const numOfTables = getNumOfGames(urlParams);
 
 const selectedWords = selectWords(words.words, numOfTables); //(words, numofwords)
 
@@ -66,6 +85,44 @@ const tables = getTables();
 
 // ideal é colocar a sem acento também
 const game = new Game(selectedWords, tables, 6, 5);
+
+for (let i = 0; i < $menuButtons.length; i++) {
+  $menuButtons[i].addEventListener('click', (event) => {
+    if (!event.target) return;
+    const { target } = event;
+    if (target) {
+      const numOfGames = Number(
+        (target as HTMLButtonElement).getAttribute('value'),
+      );
+      console.log('numOfGames', numOfGames);
+
+      urlParams.set('games', numOfGames.toString());
+
+      let thisURL = window.location.href;
+      const paramsIndex = thisURL.indexOf('?');
+
+      if (paramsIndex !== -1) {
+        thisURL = thisURL.split('').slice(0, paramsIndex).join('');
+      }
+
+      if (game.gameIsCleared)
+        return window.location.replace(thisURL + '?' + urlParams);
+
+      if (numOfGames > 1) {
+        const newWords = selectWords(words.words, numOfGames - 1);
+        createTables(numOfGames - 1);
+        game.tables = [...getTables()];
+        game.selectedWords = [...game.selectedWords, ...newWords];
+        selectedWordsWithoutAccent = [
+          ...selectedWordsWithoutAccent,
+          ...removeAccents(newWords),
+        ];
+      }
+
+      $menu.style.display = 'none';
+    }
+  });
+}
 
 let gameIsRunning = true;
 
@@ -221,6 +278,8 @@ async function submitWord(
   cells: HTMLCollectionOf<HTMLTableCellElement>,
 ) {
   pauseGame();
+
+  cells[table.cellPosition].removeAttribute('class');
 
   const guessedWord = game.guessedLetters.join('');
 
@@ -385,11 +444,15 @@ function changeSelectedBlock(
 
 function clearGame() {
   console.log('You matched the word!');
+  game.gameIsCleared = true;
+  $menu.style.display = 'flex';
 }
 
 function endGame() {
   game.needsCheck = true;
   console.log('That was your last chance!');
+  game.gameIsCleared = true;
+  $menu.style.display = 'flex';
 }
 
 // next row won't exist
