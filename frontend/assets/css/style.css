@@ -59,13 +59,51 @@ body {
   background-color: var(--drab-dark-brown-color);
   font-family: sans-serif;
   color: var(--dark-color);
+  margin: 0;
+  padding: 0;
+}
+
+.menu {
+  position: fixed;
+  background-color: rgba(0, 0, 0, 0.7);
+  height: 100vh;
+  width: 100vw;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.menu button {
+  background-color: var(--hunter-green-color);
+  color: var(--dutch-white-color);
+  font-size: 5vh;
+  border-radius: 15px;
+  padding: 12px;
+  border: 0;
+  transition: background-color 0.4s, color 0.4s;
+  text-transform: uppercase;
+  font-weight: bolder;
+}
+
+.menu button:hover {
+  background-color: var(--dutch-white-color);
+  color: var(--fern-green-color);
+  cursor: pointer;
 }
 
 .container {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 50px auto;
+  margin: 0px auto;
+}
+
+.game {
+  display: flex;
 }
 
 .word {
