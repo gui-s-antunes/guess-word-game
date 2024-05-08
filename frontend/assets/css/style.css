@@ -108,6 +108,10 @@ body {
   cursor: pointer;
 }
 
+.menu #menu-game-words {
+  display: none;
+}
+
 .container {
   display: flex;
   align-items: center;

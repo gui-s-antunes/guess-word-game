@@ -445,14 +445,36 @@ function changeSelectedBlock(
 function clearGame() {
   console.log('You matched the word!');
   game.gameIsCleared = true;
-  $menu.style.display = 'flex';
+  changeMenuTitle('You win!');
+  showSelectedWordsOnMenu();
+  setTimeout(() => {
+    $menu.style.display = 'flex';
+  }, 1000);
 }
 
 function endGame() {
   game.needsCheck = true;
   console.log('That was your last chance!');
   game.gameIsCleared = true;
-  $menu.style.display = 'flex';
+  changeMenuTitle('You failed!');
+  showSelectedWordsOnMenu();
+  setTimeout(() => {
+    $menu.style.display = 'flex';
+  }, 1000);
+}
+
+function changeMenuTitle(menuText: string) {
+  const titleMenu = document.getElementById('title-menu') as HTMLHeadingElement;
+  titleMenu.textContent = menuText;
+}
+
+function showSelectedWordsOnMenu() {
+  const menuWords = document.getElementById(
+    'menu-game-words',
+  ) as HTMLParagraphElement;
+
+  menuWords.textContent = `[${game.selectedWords.join(', ')}]`;
+  menuWords.style.display = 'block';
 }
 
 // next row won't exist
