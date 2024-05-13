@@ -1,6 +1,7 @@
 console.log('Controllers.ts is here!');
 
 import { Words, Game, Table } from './game';
+import { changeKeyboardColors } from './utils/changeKeyboardColors';
 import { generateWordBlocks } from './utils/generateWordBlocks';
 import { getCells } from './utils/getCells';
 import { getWords } from './utils/getWords';
@@ -38,7 +39,7 @@ const gameActions: GameActions = {
 // }
 
 // const csvFilePath = './assets/files/data.csv';
-const csvFilePath = './assets/files/profiles.csv';
+const csvFilePath = './assets/files/profiles2.csv';
 
 const wordsFromData = await getWords(csvFilePath);
 
@@ -111,12 +112,12 @@ for (let i = 0; i < $menuButtons.length; i++) {
       if (numOfGames > 1) {
         const newWords = selectWords(words.words, numOfGames - 1);
         createTables(numOfGames - 1);
-        game.tables = [...getTables()];
-        game.selectedWords = [...game.selectedWords, ...newWords];
         selectedWordsWithoutAccent = [
           ...selectedWordsWithoutAccent,
           ...removeAccents(newWords),
         ];
+        game.tables = [...getTables()];
+        game.selectedWords = [...game.selectedWords, ...newWords];
       }
 
       $menu.style.display = 'none';
@@ -205,6 +206,7 @@ function gameAction(key: string) {
     if (isTheLastRow()) game.needsCheck = true;
 
     setTimeout(() => {
+      changeKeyboardColors(game);
       game.rowPosition++;
       game.cellPosition = 0;
 
@@ -243,7 +245,7 @@ function addLetterToBlock(letter: string) {
     const cells = rows[game.tables[i].rowPosition].getElementsByTagName('td');
     cells[game.tables[i].cellPosition].textContent = letter.toUpperCase();
 
-    blockToRight(tables[i], cells);
+    blockToRight(game.tables[i], cells);
   }
 }
 
@@ -261,7 +263,7 @@ function isBlocksFulfilled() {
   console.log('guessedLetters fullfil: ', game.guessedLetters);
   for (let i = 0; i < game.numCells; i++) {
     console.log('guessedLetters fullfil pos: ', game.guessedLetters[i]);
-    if (!game.guessedLetters[i].length) return false;
+    if (!game.guessedLetters[i]) return false;
   }
   return isValid;
 }
