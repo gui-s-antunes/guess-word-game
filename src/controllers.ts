@@ -13,6 +13,7 @@ export const $menu = document.querySelector('.menu') as HTMLDivElement;
 export const $menuButtons = $menu.getElementsByTagName(
   'button',
 ) as HTMLCollectionOf<HTMLButtonElement>;
+export const $keyboardButtons = document.getElementsByClassName('keyboard-btn');
 
 interface GameActions {
   [key: string]: (
@@ -125,23 +126,40 @@ for (let i = 0; i < $menuButtons.length; i++) {
   });
 }
 
+for (let i = 0; i < $keyboardButtons.length; i++) {
+  $keyboardButtons[i].addEventListener('click', (event) => {
+    if (!event.target) return;
+    const { target } = event;
+    const btnText = (target as HTMLButtonElement).textContent?.trim();
+
+    if (!btnText) return;
+
+    keyActions(btnText);
+  });
+}
+
 let gameIsRunning = true;
 
 console.log('Palavras escolhidas: ', selectedWords);
 console.log('Palavras sem acento: ', selectedWordsWithoutAccent);
 
 document.addEventListener('keydown', (event) => {
+  keyActions(event.key);
+});
+
+// action from keyboard or virtual keyboard
+function keyActions(key: string) {
   if (!gameIsRunning) return;
-  console.log('event key: ', event.key);
-  if (event.key.length === 1) {
-    if (isPressedKeyALetter(event.key)) {
-      addLetterToBlock(event.key);
+
+  if (key.length === 1) {
+    if (isPressedKeyALetter(key)) {
+      addLetterToBlock(key);
       return;
     }
   }
 
-  gameAction(event.key);
-});
+  gameAction(key);
+}
 
 // function haveSelectedWordsAccents(selectedWords: string[]): boolean {
 //   let hasAccents = false;
@@ -230,7 +248,7 @@ function gameAction(key: string) {
 
 // checks if the user cleared all the words
 function isTheGameCleared() {
-  return game.numOfGuessedWords === selectedWords.length;
+  return game.numOfGuessedWords === game.selectedWords.length;
 }
 
 function addLetterToBlock(letter: string) {
@@ -239,7 +257,7 @@ function addLetterToBlock(letter: string) {
   for (let i = 0; i < game.tables.length; i++) {
     if (game.tables[i].isCleared) continue;
 
-    game.guessedLetters[game.tables[i].cellPosition] = letter;
+    game.guessedLetters[game.tables[i].cellPosition] = letter.toLowerCase();
 
     const rows = game.tables[i].tableHTML.getElementsByTagName('tr');
     const cells = rows[game.tables[i].rowPosition].getElementsByTagName('td');
