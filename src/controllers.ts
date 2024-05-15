@@ -195,10 +195,40 @@ function getTables(): Table[] {
 
   for (let i = 0; i < tables.length; i++) {
     const tableInstance = new Table(tables[i], selectedWordsWithoutAccent[i]);
+    addClickToBlocks(tableInstance);
     tablesInstanceList.push(tableInstance);
   }
 
   return tablesInstanceList;
+}
+
+function addClickToBlocks(table: Table) {
+  const blockLines = table.tableHTML.getElementsByTagName('tr');
+  // const blocks = table.tableHTML.getElementsByTagName('td');
+
+  for (let i = 0; i < blockLines.length; i++) {
+    const blocks = blockLines[i].getElementsByTagName('td');
+
+    for (let j = 0; j < blocks.length; j++) {
+      blocks[j].addEventListener('click', () => {
+        if (i !== game.rowPosition) return;
+        blockClickEvent(j);
+      });
+    }
+  }
+}
+
+function blockClickEvent(newPos: number) {
+  for (let i = 0; i < game.tables.length; i++) {
+    if (game.tables[i].isCleared) continue;
+    const cells = getCells(game, game.tables[i].tableHTML);
+    cells[game.tables[i].cellPosition].removeAttribute('class');
+    game.tables[i].cellPosition = newPos;
+    cells[game.tables[i].cellPosition].setAttribute(
+      'class',
+      'selectedPosition',
+    );
+  }
 }
 
 function isPressedKeyALetter(key: string) {

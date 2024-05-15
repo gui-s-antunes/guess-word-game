@@ -152,6 +152,10 @@ body {
   background-color: var(--moss-green-color);
 }
 
+.word .usedRow td:hover {
+  cursor: pointer;
+}
+
 .word tr .selectedPosition {
   background-color: var(--dutch-white-color);
 }
