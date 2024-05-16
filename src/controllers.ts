@@ -82,11 +82,11 @@ let selectedWordsWithoutAccent: string[] = [];
 // if (selectedWordsHaveAccents)
 selectedWordsWithoutAccent = [...removeAccents(selectedWords)];
 
-createTables(numOfTables);
+createTables(numOfTables, 6 + (numOfTables - 1));
 const tables = getTables();
 
 // ideal é colocar a sem acento também
-const game = new Game(selectedWords, tables, 6, 5);
+const game = new Game(selectedWords, tables, 6 + (numOfTables - 1), 5);
 
 for (let i = 0; i < $menuButtons.length; i++) {
   $menuButtons[i].addEventListener('click', (event) => {
@@ -112,13 +112,15 @@ for (let i = 0; i < $menuButtons.length; i++) {
 
       if (numOfGames > 1) {
         const newWords = selectWords(words.words, numOfGames - 1);
-        createTables(numOfGames - 1);
+        generateWordBlocks(game.tables[0].tableHTML, false, numOfGames - 1);
+        createTables(numOfGames - 1, 6 + (numOfGames - 1));
         selectedWordsWithoutAccent = [
           ...selectedWordsWithoutAccent,
           ...removeAccents(newWords),
         ];
         game.tables = [...getTables()];
         game.selectedWords = [...game.selectedWords, ...newWords];
+        game.numRows = 6 + (numOfGames - 1);
       }
 
       $menu.style.display = 'none';
@@ -177,7 +179,7 @@ function createTables(numOfTables: number, rows?: number, cells?: number) {
   for (let i = 0; i < numOfTables; i++) {
     const tbl = document.createElement('table');
     tbl.setAttribute('class', 'word');
-    generateWordBlocks(tbl, rows, cells);
+    generateWordBlocks(tbl, true, rows, cells);
     $game.appendChild(tbl);
   }
 }
