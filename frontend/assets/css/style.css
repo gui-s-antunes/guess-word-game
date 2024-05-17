@@ -196,12 +196,14 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  gap: 1vh;
 }
 
 #keyboard .keyboard-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 5px;
+  width: calc(1vh + 2vw);
+  height: calc(1vh + 2vw);
+  border-radius: calc(0.1vh + 0.2vw);
+  border: none;
   background: linear-gradient(
       to right,
       var(--moss-green-color) 50%,
