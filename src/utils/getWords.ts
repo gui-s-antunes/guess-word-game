@@ -34,7 +34,7 @@ export const getWords = async (csvFilePath: string) => {
   const dbWords: string[] = [];
   // let palavraTamanho = '1';
   for (let i = 0; i < parsedData.length; i++) {
-    if (parsedData[i].tf >= 50000 && parsedData[i].palavra.length == 5) {
+    if (parsedData[i].tf >= 20000 && parsedData[i].palavra.length == 5) {
       // console.log('tamanho da palavra fora: ', parsedData[i].palavra.length);
       // if (parsedData[i].palavra.length <= 6) {
       //   palavraTamanho = parsedData[i].palavra.length.toString();
