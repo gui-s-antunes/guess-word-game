@@ -20,616 +20,130 @@ License: MIT
 
 /***/ }),
 
-/***/ "./src/controllers.ts":
-/*!****************************!*\
-  !*** ./src/controllers.ts ***!
-  \****************************/
-/***/ ((module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "$game": () => (/* binding */ $game),
-/* harmony export */   "$keyboardButtons": () => (/* binding */ $keyboardButtons),
-/* harmony export */   "$menu": () => (/* binding */ $menu),
-/* harmony export */   "$menuButtons": () => (/* binding */ $menuButtons)
-/* harmony export */ });
-/* harmony import */ var _game__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./game */ "./src/game.ts");
-/* harmony import */ var _utils_changeKeyboardColors__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils/changeKeyboardColors */ "./src/utils/changeKeyboardColors.ts");
-/* harmony import */ var _utils_generateWordBlocks__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./utils/generateWordBlocks */ "./src/utils/generateWordBlocks.ts");
-/* harmony import */ var _utils_getCells__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./utils/getCells */ "./src/utils/getCells.ts");
-/* harmony import */ var _utils_getWords__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./utils/getWords */ "./src/utils/getWords.ts");
-/* harmony import */ var _utils_removeAccents__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/removeAccents */ "./src/utils/removeAccents.ts");
-/* harmony import */ var _utils_selectWords__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/selectWords */ "./src/utils/selectWords.ts");
-console.log('Controllers.ts is here!');
-
-
-
-
-
-
-
-const $game = document.querySelector('.game');
-const $menu = document.querySelector('.menu');
-const $menuButtons = $menu.getElementsByTagName('button');
-const $keyboardButtons = document.getElementsByClassName('keyboard-btn');
-const gameActions = {
-    ArrowRight: blockToRight,
-    ArrowLeft: blocktoLeft,
-    Enter: submitWord,
-    Backspace: clearBlock,
-};
-// export interface Palavra {
-//   [key: string]: number;
-// }
-// const csvFilePath = './assets/files/data.csv';
-const csvFilePath = './assets/files/profiles2.csv';
-const wordsFromData = await (0,_utils_getWords__WEBPACK_IMPORTED_MODULE_4__.getWords)(csvFilePath);
-console.log('palavras do data: ', wordsFromData);
-// generateWordBlocks($word); // mover para baixo do getWords
-const words = new _game__WEBPACK_IMPORTED_MODULE_0__.Words(wordsFromData);
-console.log('iniciou remoção dos acentos');
-const wordsWithoutAccent = (0,_utils_removeAccents__WEBPACK_IMPORTED_MODULE_5__.removeAccents)(words.words);
-console.log('sem acento: ', wordsWithoutAccent);
-console.log('acabou remoção dos acentos');
-function getNumOfGames(urlParams) {
-    if (urlParams.get('games') === '2')
-        return 2;
-    if (urlParams.get('games') === '4')
-        return 4;
-    return 1;
-}
-function isThereGamesParam(urlParams) {
-    return urlParams.has('games');
-}
-const queryString = window.location.search;
-const urlParams = new URLSearchParams(queryString);
-if (isThereGamesParam(urlParams))
-    $menu.style.display = 'none';
-const numOfTables = getNumOfGames(urlParams);
-const selectedWords = (0,_utils_selectWords__WEBPACK_IMPORTED_MODULE_6__.selectWords)(words.words, numOfTables); //(words, numofwords)
-let selectedWordsWithoutAccent = [];
-// const selectedWordsHaveAccents = haveSelectedWordsAccents(selectedWords);
-// if (selectedWordsHaveAccents)
-selectedWordsWithoutAccent = [...(0,_utils_removeAccents__WEBPACK_IMPORTED_MODULE_5__.removeAccents)(selectedWords)];
-createTables(numOfTables, 6 + (numOfTables - 1));
-const tables = getTables();
-// ideal é colocar a sem acento também
-const game = new _game__WEBPACK_IMPORTED_MODULE_0__.Game(selectedWords, tables, 6 + (numOfTables - 1), 5);
-for (let i = 0; i < $menuButtons.length; i++) {
-    $menuButtons[i].addEventListener('click', (event) => {
-        if (!event.target)
-            return;
-        const { target } = event;
-        if (target) {
-            const numOfGames = Number(target.getAttribute('value'));
-            console.log('numOfGames', numOfGames);
-            urlParams.set('games', numOfGames.toString());
-            let thisURL = window.location.href;
-            const paramsIndex = thisURL.indexOf('?');
-            if (paramsIndex !== -1) {
-                thisURL = thisURL.split('').slice(0, paramsIndex).join('');
-            }
-            if (game.gameIsCleared)
-                return window.location.replace(thisURL + '?' + urlParams);
-            if (numOfGames > 1) {
-                const newWords = (0,_utils_selectWords__WEBPACK_IMPORTED_MODULE_6__.selectWords)(words.words, numOfGames - 1);
-                (0,_utils_generateWordBlocks__WEBPACK_IMPORTED_MODULE_2__.generateWordBlocks)(game.tables[0].tableHTML, false, numOfGames - 1);
-                createTables(numOfGames - 1, 6 + (numOfGames - 1));
-                selectedWordsWithoutAccent = [
-                    ...selectedWordsWithoutAccent,
-                    ...(0,_utils_removeAccents__WEBPACK_IMPORTED_MODULE_5__.removeAccents)(newWords),
-                ];
-                game.tables = [...getTables()];
-                game.selectedWords = [...game.selectedWords, ...newWords];
-                game.numRows = 6 + (numOfGames - 1);
-            }
-            $menu.style.display = 'none';
-        }
-    });
-}
-for (let i = 0; i < $keyboardButtons.length; i++) {
-    $keyboardButtons[i].addEventListener('click', (event) => {
-        if (!event.target)
-            return;
-        const { target } = event;
-        const btnText = target.textContent?.trim();
-        if (!btnText)
-            return;
-        keyActions(btnText);
-    });
-}
-let gameIsRunning = true;
-console.log('Palavras escolhidas: ', selectedWords);
-console.log('Palavras sem acento: ', selectedWordsWithoutAccent);
-document.addEventListener('keydown', (event) => {
-    keyActions(event.key);
-});
-// action from keyboard or virtual keyboard
-function keyActions(key) {
-    if (!gameIsRunning)
-        return;
-    if (key.length === 1) {
-        if (isPressedKeyALetter(key)) {
-            addLetterToBlock(key);
-            return;
-        }
-    }
-    gameAction(key);
-}
-// function haveSelectedWordsAccents(selectedWords: string[]): boolean {
-//   let hasAccents = false;
-//   for (let i = 0; i < selectedWords.length; i++) {
-//     // const slapora = selectedWords[i].match(/[^a-z]/i);
-//     // console.log('slapohra: ', slapora);
-//     if (selectedWords[i].match(/[^a-z]/i)) hasAccents = true;
-//   }
-//   return hasAccents;
-// }
-// creates a number of table games
-function createTables(numOfTables, rows, cells) {
-    for (let i = 0; i < numOfTables; i++) {
-        const tbl = document.createElement('table');
-        tbl.setAttribute('class', 'word');
-        (0,_utils_generateWordBlocks__WEBPACK_IMPORTED_MODULE_2__.generateWordBlocks)(tbl, true, rows, cells);
-        $game.appendChild(tbl);
-    }
-}
-// get all the table games
-function getTables() {
-    // return document.getElementsByClassName(
-    //   'word',
-    // ) as HTMLCollectionOf<HTMLTableElement>;
-    const tables = document.getElementsByClassName('word');
-    const tablesInstanceList = [];
-    for (let i = 0; i < tables.length; i++) {
-        const tableInstance = new _game__WEBPACK_IMPORTED_MODULE_0__.Table(tables[i], selectedWordsWithoutAccent[i]);
-        addClickToBlocks(tableInstance);
-        tablesInstanceList.push(tableInstance);
-    }
-    return tablesInstanceList;
-}
-function addClickToBlocks(table) {
-    const blockLines = table.tableHTML.getElementsByTagName('tr');
-    // const blocks = table.tableHTML.getElementsByTagName('td');
-    for (let i = 0; i < blockLines.length; i++) {
-        const blocks = blockLines[i].getElementsByTagName('td');
-        for (let j = 0; j < blocks.length; j++) {
-            blocks[j].addEventListener('click', () => {
-                if (i !== game.rowPosition)
-                    return;
-                blockClickEvent(j);
-            });
-        }
-    }
-}
-function blockClickEvent(newPos) {
-    for (let i = 0; i < game.tables.length; i++) {
-        if (game.tables[i].isCleared)
-            continue;
-        const cells = (0,_utils_getCells__WEBPACK_IMPORTED_MODULE_3__.getCells)(game, game.tables[i].tableHTML);
-        cells[game.tables[i].cellPosition].removeAttribute('class');
-        game.tables[i].cellPosition = newPos;
-        cells[game.tables[i].cellPosition].setAttribute('class', 'selectedPosition');
-    }
-}
-function isPressedKeyALetter(key) {
-    return key.match(/[a-z]/i);
-}
-function gameAction(key) {
-    const fn = gameActions[key];
-    if (!fn)
-        return;
-    if (key === 'Enter') {
-        if (!isBlocksFulfilled() || !isGuessedWordValid())
-            return;
-    }
-    for (let i = 0; i < game.tables.length; i++) {
-        if (game.tables[i].isCleared)
-            continue;
-        const cells = (0,_utils_getCells__WEBPACK_IMPORTED_MODULE_3__.getCells)(game, game.tables[i].tableHTML);
-        fn(game.tables[i], cells);
-    }
-    if (key === 'Enter') {
-        game.guessedLetters.splice(0, game.guessedLetters.length);
-        if (isTheLastRow())
-            game.needsCheck = true;
-        setTimeout(() => {
-            (0,_utils_changeKeyboardColors__WEBPACK_IMPORTED_MODULE_1__.changeKeyboardColors)(game);
-            game.rowPosition++;
-            game.cellPosition = 0;
-            if (!game.needsCheck)
-                return resumeGame();
-            game.needsCheck = false;
-            // one of the tables (game word) was cleared! check if there's remaining to be cleared
-            if (isTheGameCleared())
-                return clearGame();
-            // the game was not cleared and there's no more rows remaining
-            if (game.rowPosition + 1 > game.numRows)
-                return endGame();
-            // There's row remaining
-            return resumeGame();
-            // // the game was cleared!
-        }, 2600);
-    }
-}
-// checks if the user cleared all the words
-function isTheGameCleared() {
-    return game.numOfGuessedWords === game.selectedWords.length;
-}
-function addLetterToBlock(letter) {
-    console.log('add letter to block');
-    for (let i = 0; i < game.tables.length; i++) {
-        if (game.tables[i].isCleared)
-            continue;
-        game.guessedLetters[game.tables[i].cellPosition] = letter.toLowerCase();
-        const rows = game.tables[i].tableHTML.getElementsByTagName('tr');
-        const cells = rows[game.tables[i].rowPosition].getElementsByTagName('td');
-        cells[game.tables[i].cellPosition].textContent = letter.toUpperCase();
-        blockToRight(game.tables[i], cells);
-    }
-}
-function pauseGame() {
-    gameIsRunning = false;
-}
-function resumeGame() {
-    gameIsRunning = true;
-}
-// checks if user fullfil the blocks and word validator
-function isBlocksFulfilled() {
-    const isValid = true;
-    console.log('guessedLetters fullfil: ', game.guessedLetters);
-    for (let i = 0; i < game.numCells; i++) {
-        console.log('guessedLetters fullfil pos: ', game.guessedLetters[i]);
-        if (!game.guessedLetters[i])
-            return false;
-    }
-    return isValid;
-}
-function isGuessedWordValid() {
-    const isValid = true;
-    const guessedWord = game.guessedLetters.join('');
-    if (!wordsWithoutAccent.includes(guessedWord))
-        return false;
-    return isValid;
-}
-async function submitWord(table, cells) {
-    pauseGame();
-    cells[table.cellPosition].removeAttribute('class');
-    const guessedWord = game.guessedLetters.join('');
-    checkCorrectLetters(table, cells, guessedWord);
-    setTimeout(() => {
-        if (areAllTheCellsCorrect(cells)) {
-            table.isCleared = true;
-            addAccentToGuessedWord(guessedWord, cells);
-            game.numOfGuessedWords++;
-            game.needsCheck = true;
-            return;
-        }
-        goToNextRow(table, cells);
-    }, 2500);
-}
-function areAllTheCellsCorrect(cells) {
-    const cellsArray = Array.from(cells);
-    return cellsArray.every((td) => td.getAttribute('color') === 'greenBlock');
-}
-function checkCorrectLetters(table, cells, guessedWord) {
-    // for (let i = 0; i < selectedWordsWithoutAccent.length; i++) {
-    const guessedWordChars = [...guessedWord];
-    let letterToCheck = '';
-    const colorsPos = [];
-    for (let j = 0; j < guessedWordChars.length; j++) {
-        if (!guessedWordChars[j])
-            continue;
-        let indexValue = 0;
-        let cont = 0;
-        letterToCheck = guessedWordChars[j];
-        while (indexValue !== -1) {
-            indexValue = table.selectedWord.indexOf(letterToCheck, indexValue);
-            if (indexValue === -1)
-                continue;
-            if (guessedWordChars[indexValue] === '')
-                break;
-            if (guessedWordChars[indexValue] === table.selectedWord[indexValue]) {
-                // cells[indexValue].setAttribute('color', 'greenBlock');
-                colorsPos[indexValue] = 'greenBlock';
-                guessedWordChars[indexValue] = '';
-                indexValue++;
-                continue;
-            }
-            cont++;
-            indexValue++;
-        }
-        if (cont === 0)
-            continue;
-        guessedWordChars.forEach((char, index) => {
-            if (cont > 0 && char === letterToCheck) {
-                // cells[index].setAttribute('color', 'yellowBlock');
-                colorsPos[index] = 'yellowBlock';
-                cont--;
-            }
-        });
-    }
-    addColorAttributeToBlocks(cells, colorsPos);
-    // }
-}
-function addColorAttributeToBlocks(cells, colorsPos) {
-    for (let i = 0; i < cells.length; i++) {
-        setTimeout(() => {
-            cells[i].setAttribute('color', colorsPos[i] || 'missedBlock');
-        }, 0.3 * i * 1000);
-    }
-}
-// // a letter that doesn't exist in the word
-// function checkIncorrectLetters() {}
-// // a letter that exists but it's on the word position
-// function checkIncorrectPositionLetters() {}
-function addAccentToGuessedWord(guessedWord, cells) {
-    const guessedWordChars = [...guessedWord];
-    for (let i = 0; i < selectedWords.length; i++) {
-        if (selectedWordsWithoutAccent[i] !== guessedWord)
-            continue;
-        for (let j = 0; j < selectedWords[i].length; j++) {
-            if (selectedWords[i][j] === guessedWordChars[j])
-                continue;
-            guessedWordChars[j] = selectedWords[i][j];
-        }
-    }
-    const guessedWordWithAccent = guessedWordChars.join('');
-    blocksToGetAccent(guessedWordWithAccent, cells);
-}
-function blocksToGetAccent(guessedWordWithAccent, cells) {
-    for (let i = 0; i < cells.length; i++) {
-        if (guessedWordWithAccent[i] === cells[i].textContent)
-            continue;
-        cells[i].textContent = guessedWordWithAccent[i].toUpperCase();
-    }
-}
-function removeSelectedCell(currentCellPosition, cells) {
-    cells[currentCellPosition].removeAttribute('class');
-}
-function goToNextRow(table, cells) {
-    removeSelectedCell(table.cellPosition, cells);
-    if (isTheLastRow())
-        return;
-    changeSelectedBlock(table, cells);
-    activeNewRow(table);
-}
-// to know which rows (chances) the player used
-function activeNewRow(table) {
-    const newRow = table.tableHTML.getElementsByTagName('tr')[table.rowPosition + 1];
-    newRow.setAttribute('class', 'usedRow');
-    table.rowPosition++;
-    table.cellPosition = 0;
-}
-function changeSelectedBlock(table, cells) {
-    cells[table.cellPosition].removeAttribute('class');
-    const newCells = table.tableHTML.getElementsByTagName('tr')[table.rowPosition + 1];
-    newCells.children[0].setAttribute('class', 'selectedPosition');
-}
-function clearGame() {
-    console.log('You matched the word!');
-    game.gameIsCleared = true;
-    changeMenuTitle('You win!');
-    showSelectedWordsOnMenu();
-    setTimeout(() => {
-        $menu.style.display = 'flex';
-    }, 1000);
-}
-function endGame() {
-    game.needsCheck = true;
-    console.log('That was your last chance!');
-    game.gameIsCleared = true;
-    changeMenuTitle('You failed!');
-    showSelectedWordsOnMenu();
-    setTimeout(() => {
-        $menu.style.display = 'flex';
-    }, 1000);
-}
-function changeMenuTitle(menuText) {
-    const titleMenu = document.getElementById('title-menu');
-    titleMenu.textContent = menuText;
-}
-function showSelectedWordsOnMenu() {
-    const menuWords = document.getElementById('menu-game-words');
-    menuWords.textContent = `[${game.selectedWords.join(', ')}]`;
-    menuWords.style.display = 'block';
-}
-// next row won't exist
-// this function is called after changed the rowPosition to the next one
-function isTheLastRow() {
-    return game.rowPosition === game.numRows - 1;
-}
-function blocktoLeft(table, cells) {
-    if (table.cellPosition > 0) {
-        cells[table.cellPosition].removeAttribute('class');
-        cells[table.cellPosition - 1].setAttribute('class', 'selectedPosition');
-        table.cellPosition--;
-    }
-}
-function blockToRight(table, cells) {
-    if (table.cellPosition < cells.length - 1) {
-        cells[table.cellPosition].removeAttribute('class');
-        cells[table.cellPosition + 1].setAttribute('class', 'selectedPosition');
-        table.cellPosition++;
-    }
-}
-function clearBlock(table, cells) {
-    if (cells[table.cellPosition].textContent === '')
-        return blocktoLeft(table, cells);
-    cells[table.cellPosition].textContent = '';
-    game.guessedLetters[table.cellPosition] = '';
-}
-
-__webpack_async_result__();
-} catch(e) { __webpack_async_result__(e); } }, 1);
-
-/***/ }),
-
-/***/ "./src/game.ts":
-/*!*********************!*\
-  !*** ./src/game.ts ***!
-  \*********************/
+/***/ "./src/classes/game.ts":
+/*!*****************************!*\
+  !*** ./src/classes/game.ts ***!
+  \*****************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "Game": () => (/* binding */ Game),
-/* harmony export */   "Position": () => (/* binding */ Position),
-/* harmony export */   "SelectedWords": () => (/* binding */ SelectedWords),
-/* harmony export */   "Table": () => (/* binding */ Table),
-/* harmony export */   "Words": () => (/* binding */ Words)
+/* harmony export */   "Game": () => (/* binding */ Game)
 /* harmony export */ });
-// export class Game {
-//   constructor(private _numOfWords: number, private _difficulty: number) {}
-//   set;
-// }
-class Position {
-    _rowPosition;
-    _cellPosition;
-    constructor(_rowPosition, _cellPosition) {
-        this._rowPosition = _rowPosition;
-        this._cellPosition = _cellPosition;
-    }
-    set rowPosition(position) {
-        this._rowPosition = position;
-    }
-    get rowPosition() {
-        return this._rowPosition;
-    }
-    set cellPosition(cellPosition) {
-        this._cellPosition = cellPosition;
-    }
-    get cellPosition() {
-        return this._cellPosition;
-    }
-}
 class Game {
-    _selectedWords;
-    _tables;
-    _numRows;
-    _numCells;
-    _position = new Position(0, 0);
-    _numOfGuessedWords = 0;
-    _needsCheck = false;
-    _guessedLetters = [];
-    _gameIsCleared = false;
-    // private _tables: Table[] | null = null;
-    constructor(_selectedWords, 
-    // private _tables: HTMLCollectionOf<HTMLTableElement>,
-    _tables, _numRows, _numCells) {
-        this._selectedWords = _selectedWords;
-        this._tables = _tables;
-        this._numRows = _numRows;
-        this._numCells = _numCells;
+    tables;
+    dbWords;
+    selectedWords;
+    selectedWordsWithoutAccent;
+    numOfGames;
+    constructor(tables, dbWords, selectedWords, selectedWordsWithoutAccent, numOfGames) {
+        this.tables = tables;
+        this.dbWords = dbWords;
+        this.selectedWords = selectedWords;
+        this.selectedWordsWithoutAccent = selectedWordsWithoutAccent;
+        this.numOfGames = numOfGames;
     }
-    set selectedWords(selectedWords) {
-        this._selectedWords = [...selectedWords];
-    }
-    get selectedWords() {
-        return this._selectedWords;
-    }
-    set tables(tables) {
-        this._tables = tables;
-    }
-    get tables() {
-        return this._tables;
-    }
-    set rowPosition(position) {
-        this._position.rowPosition = position;
-    }
-    get rowPosition() {
-        return this._position.rowPosition;
-    }
-    set cellPosition(cellPosition) {
-        this._position.cellPosition = cellPosition;
-    }
-    get cellPosition() {
-        return this._position.cellPosition;
-    }
-    get numOfGuessedWords() {
-        return this._numOfGuessedWords;
-    }
-    set numOfGuessedWords(newNumber) {
-        this._numOfGuessedWords = newNumber;
-    }
-    set needsCheck(needsCheck) {
-        this._needsCheck = needsCheck;
-    }
-    get needsCheck() {
-        return this._needsCheck;
-    }
-    get guessedLetters() {
-        return this._guessedLetters;
-    }
-    set numRows(numRows) {
-        this._numRows = numRows;
-    }
-    get numRows() {
-        return this._numRows;
-    }
-    set numCells(numCells) {
-        this._numCells = numCells;
-    }
-    get numCells() {
-        return this._numCells;
-    }
-    set gameIsCleared(gameIsCleared) {
-        this._gameIsCleared = gameIsCleared;
-    }
-    get gameIsCleared() {
-        return this._gameIsCleared;
+    // setTables(numOfGames: number) {
+    //   //
+    // }
+    // restart page with a new number of games set
+    newGame(newNumOfGames) {
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        urlParams.set('games', newNumOfGames);
+        let thisURL = window.location.href;
+        const paramsIndex = thisURL.indexOf('?');
+        if (paramsIndex !== -1) {
+            thisURL = thisURL.split('').slice(0, paramsIndex).join('');
+        }
+        return window.location.replace(thisURL + '?' + urlParams);
     }
 }
-class Words {
-    _words;
-    constructor(_words) {
-        this._words = _words;
+
+
+/***/ }),
+
+/***/ "./src/classes/menu.ts":
+/*!*****************************!*\
+  !*** ./src/classes/menu.ts ***!
+  \*****************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Menu": () => (/* binding */ Menu)
+/* harmony export */ });
+// VAI TER:
+// o container menu
+// o h1
+// o p
+// os botões do menu
+// o p das palavras
+class Menu {
+    game;
+    _menuContainer;
+    constructor(game, _menuContainer) {
+        this.game = game;
+        this._menuContainer = _menuContainer;
+        this._menuContainer.addEventListener('click', this.isButton.bind(this));
     }
-    set words(newWords) {
-        this._words = [...newWords];
+    isButton(e) {
+        console.log('isButton');
+        if (!e.target)
+            return;
+        const { target } = e;
+        if (target.nodeName !== 'BUTTON')
+            return;
+        const numOfGames = target.getAttribute('value');
+        if (numOfGames === null)
+            return;
+        if (Number(numOfGames) > 1) {
+            this.game.newGame(numOfGames);
+        }
+        else {
+            this.hiddenMenu();
+        }
     }
-    get words() {
-        return this._words;
+    hiddenMenu() {
+        console.log('hiddenMenu');
+        this._menuContainer.style.display = 'none';
+    }
+    showMenu() {
+        console.log('showMenu');
+        this._menuContainer.style.display = 'flex';
     }
 }
-class SelectedWords {
-    _words;
-    constructor(_words) {
-        this._words = _words;
-    }
-    set SelectedWords(words) {
-        // const randomNum = getRandomNumber(0, words.length);
-        // let randomNums: number;
-        // const selectedWords: string[] = [];
-        // for (let i = 0; i < numOfWordsToSelect; i++) {
-        //   randomNums = getRandomNumber(0, words.length);
-        //   selectedWords.push(words[randomNums]);
-        // }
-        this._words = [...words];
-    }
-    get SelectedWords() {
-        return this._words;
-    }
-}
+
+
+/***/ }),
+
+/***/ "./src/classes/table.ts":
+/*!******************************!*\
+  !*** ./src/classes/table.ts ***!
+  \******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Table": () => (/* binding */ Table)
+/* harmony export */ });
 class Table {
     _tableHTML;
-    _selectedWord;
     _cellPosition = 0;
     _rowPosition = 0;
     _isCleared = false;
-    constructor(_tableHTML, _selectedWord) {
+    constructor(_tableHTML) {
         this._tableHTML = _tableHTML;
-        this._selectedWord = _selectedWord;
     }
     get tableHTML() {
         return this._tableHTML;
     }
-    get selectedWord() {
-        return this._selectedWord;
-    }
+    // get selectedWord() {
+    //   return this._selectedWord;
+    // }
     get isCleared() {
         return this._isCleared;
     }
@@ -653,92 +167,140 @@ class Table {
 
 /***/ }),
 
-/***/ "./src/index.ts":
-/*!**********************!*\
-  !*** ./src/index.ts ***!
-  \**********************/
-/***/ ((module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
-__webpack_require__.r(__webpack_exports__);
-/* harmony import */ var _controllers__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./controllers */ "./src/controllers.ts");
-var __webpack_async_dependencies__ = __webpack_handle_async_dependencies__([_controllers__WEBPACK_IMPORTED_MODULE_0__]);
-_controllers__WEBPACK_IMPORTED_MODULE_0__ = (__webpack_async_dependencies__.then ? (await __webpack_async_dependencies__)() : __webpack_async_dependencies__)[0];
-
-
-__webpack_async_result__();
-} catch(e) { __webpack_async_result__(e); } });
-
-/***/ }),
-
-/***/ "./src/utils/changeKeyboardColors.ts":
-/*!*******************************************!*\
-  !*** ./src/utils/changeKeyboardColors.ts ***!
-  \*******************************************/
+/***/ "./src/classes/words.ts":
+/*!******************************!*\
+  !*** ./src/classes/words.ts ***!
+  \******************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "changeKeyboardColors": () => (/* binding */ changeKeyboardColors)
+/* harmony export */   "Words": () => (/* binding */ Words)
 /* harmony export */ });
-/* harmony import */ var _getCells__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./getCells */ "./src/utils/getCells.ts");
-/* harmony import */ var _replaceString__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./replaceString */ "./src/utils/replaceString.ts");
+class Words {
+    _words;
+    constructor(_words) {
+        this._words = _words;
+    }
+    get words() {
+        return this._words;
+    }
+}
 
 
-const colors = {
-    greenBlock: 'rgb(66, 106, 64)',
-    yellowBlock: 'rgb(137, 130, 54)',
-    missedBlock: 'rgb(108, 108, 75)',
-};
-function changeKeyboardColors(game) {
-    const numOfTables = game.tables.length;
-    for (let i = 0; i < game.tables.length; i++) {
-        const cells = (0,_getCells__WEBPACK_IMPORTED_MODULE_0__.getCells)(game, game.tables[i].tableHTML);
-        const yelledLetters = new Set();
-        const greenyLetters = new Set();
-        for (let j = 0; j < cells.length; j++) {
-            const cellText = cells[j].textContent?.toUpperCase();
-            if (yelledLetters.has(cellText))
-                continue;
-            const colorAttribute = cells[j].getAttribute('color');
-            if (greenyLetters.has(cellText)) {
-                if (colorAttribute === 'missedBlock' || colorAttribute === 'greenBlock')
-                    continue;
-            }
-            if (colorAttribute === 'yellowBlock')
-                yelledLetters.add(cellText);
-            if (colorAttribute === 'greenBlock')
-                greenyLetters.add(cellText);
-            const backgroundColor = colors[colorAttribute || ''];
-            if (!backgroundColor)
-                continue;
-            const btn = document.getElementById(cellText || '');
-            if (!btn)
-                continue;
-            if (numOfTables === 1) {
-                btn.style.background = backgroundColor;
-                continue;
-            }
-            const style = window.getComputedStyle(btn);
-            const btnBackgroundStyle = style.getPropertyValue('background');
-            const regexp = /rgb\(\d+, \d+, \d+\)/g;
-            let matches = [...btnBackgroundStyle.matchAll(regexp)];
-            let newBackground = '';
-            let matchIndex = matches[i].index;
-            if (matchIndex === undefined)
-                continue;
-            newBackground = (0,_replaceString__WEBPACK_IMPORTED_MODULE_1__.replaceStringPart)(btnBackgroundStyle, matchIndex, matchIndex + matches[i][0].length, backgroundColor);
-            if (numOfTables === 2) {
-                matches = [...newBackground.matchAll(regexp)];
-                matchIndex = matches[i + 2].index;
-                if (matchIndex === undefined)
-                    continue;
-                newBackground = (0,_replaceString__WEBPACK_IMPORTED_MODULE_1__.replaceStringPart)(newBackground, matchIndex, matchIndex + matches[i + 2][0].length, backgroundColor);
-            }
-            btn.style.background = newBackground;
-        }
+/***/ }),
+
+/***/ "./src/main.ts":
+/*!*********************!*\
+  !*** ./src/main.ts ***!
+  \*********************/
+/***/ ((module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _utils_getWords__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./utils/getWords */ "./src/utils/getWords.ts");
+/* harmony import */ var _utils_getNumOfGames__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./utils/getNumOfGames */ "./src/utils/getNumOfGames.ts");
+/* harmony import */ var _utils_generateTables__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./utils/generateTables */ "./src/utils/generateTables.ts");
+/* harmony import */ var _services_htmlGameDiv__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./services/htmlGameDiv */ "./src/services/htmlGameDiv.ts");
+/* harmony import */ var _utils_getTables__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./utils/getTables */ "./src/utils/getTables.ts");
+/* harmony import */ var _utils_selectWords__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/selectWords */ "./src/utils/selectWords.ts");
+/* harmony import */ var _utils_removeAccents__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/removeAccents */ "./src/utils/removeAccents.ts");
+/* harmony import */ var _services_htmlMenu__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./services/htmlMenu */ "./src/services/htmlMenu.ts");
+/* harmony import */ var _classes_game__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./classes/game */ "./src/classes/game.ts");
+/* harmony import */ var _classes_menu__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./classes/menu */ "./src/classes/menu.ts");
+/* harmony import */ var _classes_words__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./classes/words */ "./src/classes/words.ts");
+
+
+
+
+
+
+
+
+
+
+
+const wordsFilePath = './assets/files/profiles2.csv';
+const listOfWordsFromFile = await (0,_utils_getWords__WEBPACK_IMPORTED_MODULE_0__.getWords)(wordsFilePath);
+const queryString = window.location.search;
+const urlParams = new URLSearchParams(queryString);
+const numOfGames = (0,_utils_getNumOfGames__WEBPACK_IMPORTED_MODULE_1__.getNumOfGames)(urlParams);
+(0,_utils_generateTables__WEBPACK_IMPORTED_MODULE_2__.generateTables)(_services_htmlGameDiv__WEBPACK_IMPORTED_MODULE_3__.$game, numOfGames, numOfGames + 5);
+const tables = (0,_utils_getTables__WEBPACK_IMPORTED_MODULE_4__.getTables)();
+const dbWords = new _classes_words__WEBPACK_IMPORTED_MODULE_10__.Words(listOfWordsFromFile);
+const selectedWords = new _classes_words__WEBPACK_IMPORTED_MODULE_10__.Words((0,_utils_selectWords__WEBPACK_IMPORTED_MODULE_5__.selectWords)(listOfWordsFromFile, numOfGames));
+const selectedWordsWithoutAccent = new _classes_words__WEBPACK_IMPORTED_MODULE_10__.Words([
+    ...(0,_utils_removeAccents__WEBPACK_IMPORTED_MODULE_6__.removeAccents)(selectedWords.words),
+]);
+const game = new _classes_game__WEBPACK_IMPORTED_MODULE_8__.Game(tables, dbWords, selectedWords, selectedWordsWithoutAccent, numOfGames);
+const menu = new _classes_menu__WEBPACK_IMPORTED_MODULE_9__.Menu(game, _services_htmlMenu__WEBPACK_IMPORTED_MODULE_7__.$menu);
+
+__webpack_async_result__();
+} catch(e) { __webpack_async_result__(e); } }, 1);
+
+/***/ }),
+
+/***/ "./src/services/htmlGameDiv.ts":
+/*!*************************************!*\
+  !*** ./src/services/htmlGameDiv.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "$game": () => (/* binding */ $game)
+/* harmony export */ });
+const $game = document.querySelector('.game');
+
+
+/***/ }),
+
+/***/ "./src/services/htmlMenu.ts":
+/*!**********************************!*\
+  !*** ./src/services/htmlMenu.ts ***!
+  \**********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "$menu": () => (/* binding */ $menu),
+/* harmony export */   "$menuButtons": () => (/* binding */ $menuButtons),
+/* harmony export */   "$menuDescription": () => (/* binding */ $menuDescription),
+/* harmony export */   "$menuGameWords": () => (/* binding */ $menuGameWords),
+/* harmony export */   "$menuTitle": () => (/* binding */ $menuTitle)
+/* harmony export */ });
+const $menu = document.querySelector('.menu');
+const $menuButtons = $menu.getElementsByTagName('button');
+const $menuTitle = $menu.querySelector('#title-menu');
+const $menuDescription = $menu.querySelector('#description-menu');
+const $menuGameWords = $menu.querySelector('#menu-game-words');
+
+
+/***/ }),
+
+/***/ "./src/utils/generateTables.ts":
+/*!*************************************!*\
+  !*** ./src/utils/generateTables.ts ***!
+  \*************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "generateTables": () => (/* binding */ generateTables)
+/* harmony export */ });
+/* harmony import */ var _generateWordBlocks__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./generateWordBlocks */ "./src/utils/generateWordBlocks.ts");
+
+function generateTables($game, numOfTables, rows, cells) {
+    for (let i = 0; i < numOfTables; i++) {
+        const tbl = document.createElement('table');
+        tbl.setAttribute('class', 'word');
+        (0,_generateWordBlocks__WEBPACK_IMPORTED_MODULE_0__.generateWordBlocks)(tbl, true, rows, cells);
+        $game.appendChild(tbl);
     }
 }
 
@@ -776,21 +338,52 @@ function generateWordBlocks(table, newTable, rows, cells) {
 
 /***/ }),
 
-/***/ "./src/utils/getCells.ts":
-/*!*******************************!*\
-  !*** ./src/utils/getCells.ts ***!
-  \*******************************/
+/***/ "./src/utils/getNumOfGames.ts":
+/*!************************************!*\
+  !*** ./src/utils/getNumOfGames.ts ***!
+  \************************************/
 /***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
 
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "getCells": () => (/* binding */ getCells)
+/* harmony export */   "getNumOfGames": () => (/* binding */ getNumOfGames)
 /* harmony export */ });
-function getCells(game, $word) {
-    const rows = $word.getElementsByTagName('tr');
-    const cells = rows[game.rowPosition].getElementsByTagName('td');
-    return cells;
+function getNumOfGames(urlParams) {
+    if (urlParams.get('games') === '2')
+        return 2;
+    if (urlParams.get('games') === '4')
+        return 4;
+    return 1;
+}
+
+
+/***/ }),
+
+/***/ "./src/utils/getTables.ts":
+/*!********************************!*\
+  !*** ./src/utils/getTables.ts ***!
+  \********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "getTables": () => (/* binding */ getTables)
+/* harmony export */ });
+/* harmony import */ var _classes_table__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../classes/table */ "./src/classes/table.ts");
+
+function getTables() {
+    // return document.getElementsByClassName(
+    //   'word',
+    // ) as HTMLCollectionOf<HTMLTableElement>;
+    const tables = document.getElementsByClassName('word');
+    const tablesInstanceList = [];
+    for (let i = 0; i < tables.length; i++) {
+        const tableInstance = new _classes_table__WEBPACK_IMPORTED_MODULE_0__.Table(tables[i]);
+        tablesInstanceList.push(tableInstance);
+    }
+    return tablesInstanceList;
 }
 
 
@@ -916,24 +509,6 @@ function removeAccents(words) {
         wordsWithoutAccent.push(wordChars.join(''));
     }
     return wordsWithoutAccent;
-}
-
-
-/***/ }),
-
-/***/ "./src/utils/replaceString.ts":
-/*!************************************!*\
-  !*** ./src/utils/replaceString.ts ***!
-  \************************************/
-/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
-
-"use strict";
-__webpack_require__.r(__webpack_exports__);
-/* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   "replaceStringPart": () => (/* binding */ replaceStringPart)
-/* harmony export */ });
-function replaceStringPart(str, startPos, endPos, substitute) {
-    return str.slice(0, startPos) + substitute + str.slice(endPos);
 }
 
 
@@ -1113,7 +688,7 @@ function selectWords(words, numOfWordsToSelect) {
 /******/ 	// startup
 /******/ 	// Load entry module and return exports
 /******/ 	// This entry module used 'module' so it can't be inlined
-/******/ 	var __webpack_exports__ = __webpack_require__("./src/index.ts");
+/******/ 	var __webpack_exports__ = __webpack_require__("./src/main.ts");
 /******/ 	
 /******/ })()
 ;
