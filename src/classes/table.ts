@@ -4,7 +4,6 @@ export class Table {
   private _cellPosition = 0;
   private _rowPosition = 0;
   private _isCleared = false;
-  private game: Game | null = null;
 
   constructor(
     private readonly _tableHTML: HTMLTableElement, // private readonly _selectedWord: string,
@@ -73,12 +72,12 @@ export class Table {
     }
   }
 
-  clearBlock(cells: HTMLCollectionOf<HTMLTableCellElement>) {
+  clearBlock(cells: HTMLCollectionOf<HTMLTableCellElement>, game: Game) {
     if (cells[this.cellPosition].textContent === '')
       return this.blockToLeft(cells);
 
     cells[this.cellPosition].textContent = '';
 
-    if (this.game) this.game.guessedLetters[this.cellPosition] = '';
+    if (game) game.guessedLetters[this.cellPosition] = '';
   }
 }

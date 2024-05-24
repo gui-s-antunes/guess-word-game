@@ -64,27 +64,38 @@ export class Game {
   }
 
   addLetterToBlock(letter: string) {
-    // adicionar letra
+    for (let i = 0; i < this.tables.length; i++) {
+      if (this.tables[i].isCleared) continue;
+
+      this.guessedLetters[this.tables[i].cellPosition] = letter.toLowerCase();
+
+      const rows = this.tables[i].tableHTML.getElementsByTagName('tr');
+      const cells = rows[this.tables[i].rowPosition].getElementsByTagName('td');
+      cells[this.tables[i].cellPosition].textContent = letter.toUpperCase();
+
+      this.tables[i].blockToRight(cells);
+    }
   }
 
   gameAction(key: string) {
     if (key === 'ArrowLeft') return this.processTablesAction('blockToLeft');
     if (key === 'ArrowRight') return this.processTablesAction('blockToRight');
-    if (key === 'Backspace') return this.processTablesAction('clearBlock');
+    if (key === 'Backspace')
+      return this.processTablesAction('clearBlock', this);
     if (key === 'Enter') return this.enterAction();
   }
 
   private enterAction() {
     if (!this.isBlocksFulfilled() || !this.isGuessedWordValid()) return;
 
-    this.processTablesAction('submitGuess');
+    this.processTablesAction('submitGuess', this);
   }
 
-  private processTablesAction(methodToCall: string) {
+  private processTablesAction(methodToCall: string, game?: Game) {
     for (let i = 0; i < this.tables.length; i++) {
       if (this.tables[i].isCleared) continue;
       const cells = getCells(this, this.tables[i].tableHTML);
-      callClassMethod(this.tables[i], methodToCall, cells);
+      callClassMethod(this.tables[i], methodToCall, cells, game);
     }
   }
 
@@ -92,10 +103,13 @@ export class Game {
     for (let i = 0; i < this.tables[0].numCells; i++) {
       if (!this.guessedLetters[i]) return false;
     }
+    return true;
   }
 
   private isGuessedWordValid() {
     const guessedWord = this.guessedLetters.join('');
     if (!this.dbWordsWithoutAccent.words.includes(guessedWord)) return false;
+
+    return true;
   }
 }

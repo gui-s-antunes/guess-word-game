@@ -89,7 +89,15 @@ class Game {
         return window.location.replace(thisURL + '?' + urlParams);
     }
     addLetterToBlock(letter) {
-        // adicionar letra
+        for (let i = 0; i < this.tables.length; i++) {
+            if (this.tables[i].isCleared)
+                continue;
+            this.guessedLetters[this.tables[i].cellPosition] = letter.toLowerCase();
+            const rows = this.tables[i].tableHTML.getElementsByTagName('tr');
+            const cells = rows[this.tables[i].rowPosition].getElementsByTagName('td');
+            cells[this.tables[i].cellPosition].textContent = letter.toUpperCase();
+            this.tables[i].blockToRight(cells);
+        }
     }
     gameAction(key) {
         if (key === 'ArrowLeft')
@@ -97,21 +105,21 @@ class Game {
         if (key === 'ArrowRight')
             return this.processTablesAction('blockToRight');
         if (key === 'Backspace')
-            return this.processTablesAction('clearBlock');
+            return this.processTablesAction('clearBlock', this);
         if (key === 'Enter')
             return this.enterAction();
     }
     enterAction() {
         if (!this.isBlocksFulfilled() || !this.isGuessedWordValid())
             return;
-        this.processTablesAction('submitGuess');
+        this.processTablesAction('submitGuess', this);
     }
-    processTablesAction(methodToCall) {
+    processTablesAction(methodToCall, game) {
         for (let i = 0; i < this.tables.length; i++) {
             if (this.tables[i].isCleared)
                 continue;
             const cells = (0,_utils_getCells__WEBPACK_IMPORTED_MODULE_0__.getCells)(this, this.tables[i].tableHTML);
-            (0,_utils_callClassMethod__WEBPACK_IMPORTED_MODULE_1__.callClassMethod)(this.tables[i], methodToCall, cells);
+            (0,_utils_callClassMethod__WEBPACK_IMPORTED_MODULE_1__.callClassMethod)(this.tables[i], methodToCall, cells, game);
         }
     }
     isBlocksFulfilled() {
@@ -119,11 +127,13 @@ class Game {
             if (!this.guessedLetters[i])
                 return false;
         }
+        return true;
     }
     isGuessedWordValid() {
         const guessedWord = this.guessedLetters.join('');
         if (!this.dbWordsWithoutAccent.words.includes(guessedWord))
             return false;
+        return true;
     }
 }
 
@@ -256,7 +266,6 @@ class Table {
     _cellPosition = 0;
     _rowPosition = 0;
     _isCleared = false;
-    game = null;
     constructor(_tableHTML, // private readonly _selectedWord: string,
     _numRows, _numCells) {
         this._tableHTML = _tableHTML;
@@ -311,12 +320,12 @@ class Table {
             this.cellPosition++;
         }
     }
-    clearBlock(cells) {
+    clearBlock(cells, game) {
         if (cells[this.cellPosition].textContent === '')
             return this.blockToLeft(cells);
         cells[this.cellPosition].textContent = '';
-        if (this.game)
-            this.game.guessedLetters[this.cellPosition] = '';
+        if (game)
+            game.guessedLetters[this.cellPosition] = '';
     }
 }
 
