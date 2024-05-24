@@ -1,4 +1,5 @@
-import { Game } from '../game';
+// import { Game } from '../game';
+import { Game } from '../classes/game';
 
 export function getCells(
   game: Game,

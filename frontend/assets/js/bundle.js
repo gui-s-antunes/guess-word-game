@@ -31,22 +31,51 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   "Game": () => (/* binding */ Game)
 /* harmony export */ });
+/* harmony import */ var _utils_getCells__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/getCells */ "./src/utils/getCells.ts");
+/* harmony import */ var _utils_callClassMethod__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/callClassMethod */ "./src/utils/callClassMethod.ts");
+
+
 class Game {
-    tables;
+    _tables;
     dbWords;
+    dbWordsWithoutAccent;
     selectedWords;
     selectedWordsWithoutAccent;
     numOfGames;
-    constructor(tables, dbWords, selectedWords, selectedWordsWithoutAccent, numOfGames) {
-        this.tables = tables;
+    _isRunning = false;
+    _guessedLetters = [];
+    _rowPosition = 0;
+    constructor(_tables, dbWords, dbWordsWithoutAccent, selectedWords, selectedWordsWithoutAccent, numOfGames) {
+        this._tables = _tables;
         this.dbWords = dbWords;
+        this.dbWordsWithoutAccent = dbWordsWithoutAccent;
         this.selectedWords = selectedWords;
         this.selectedWordsWithoutAccent = selectedWordsWithoutAccent;
         this.numOfGames = numOfGames;
     }
-    // setTables(numOfGames: number) {
-    //   //
-    // }
+    get isRunning() {
+        return this._isRunning;
+    }
+    set isRunning(flag) {
+        this._isRunning = flag;
+    }
+    setGuessedLetters(letter, pos) {
+        const actualLetters = [...this.guessedLetters];
+        actualLetters[pos] = letter;
+        this._guessedLetters = actualLetters;
+    }
+    get guessedLetters() {
+        return this._guessedLetters;
+    }
+    setRowPos() {
+        this._rowPosition++;
+    }
+    get rowPosition() {
+        return this._rowPosition;
+    }
+    get tables() {
+        return this._tables;
+    }
     // restart page with a new number of games set
     newGame(newNumOfGames) {
         const queryString = window.location.search;
@@ -58,6 +87,96 @@ class Game {
             thisURL = thisURL.split('').slice(0, paramsIndex).join('');
         }
         return window.location.replace(thisURL + '?' + urlParams);
+    }
+    addLetterToBlock(letter) {
+        // adicionar letra
+    }
+    gameAction(key) {
+        if (key === 'ArrowLeft')
+            return this.processTablesAction('blockToLeft');
+        if (key === 'ArrowRight')
+            return this.processTablesAction('blockToRight');
+        if (key === 'Backspace')
+            return this.processTablesAction('clearBlock');
+        if (key === 'Enter')
+            return this.enterAction();
+    }
+    enterAction() {
+        if (!this.isBlocksFulfilled() || !this.isGuessedWordValid())
+            return;
+        this.processTablesAction('submitGuess');
+    }
+    processTablesAction(methodToCall) {
+        for (let i = 0; i < this.tables.length; i++) {
+            if (this.tables[i].isCleared)
+                continue;
+            const cells = (0,_utils_getCells__WEBPACK_IMPORTED_MODULE_0__.getCells)(this, this.tables[i].tableHTML);
+            (0,_utils_callClassMethod__WEBPACK_IMPORTED_MODULE_1__.callClassMethod)(this.tables[i], methodToCall, cells);
+        }
+    }
+    isBlocksFulfilled() {
+        for (let i = 0; i < this.tables[0].numCells; i++) {
+            if (!this.guessedLetters[i])
+                return false;
+        }
+    }
+    isGuessedWordValid() {
+        const guessedWord = this.guessedLetters.join('');
+        if (!this.dbWordsWithoutAccent.words.includes(guessedWord))
+            return false;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/classes/keyboard.ts":
+/*!*********************************!*\
+  !*** ./src/classes/keyboard.ts ***!
+  \*********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "Keyboard": () => (/* binding */ Keyboard)
+/* harmony export */ });
+/* harmony import */ var _utils_isKeyALetter__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/isKeyALetter */ "./src/utils/isKeyALetter.ts");
+
+class Keyboard {
+    $keyboardContainer;
+    game;
+    constructor($keyboardContainer, game) {
+        this.$keyboardContainer = $keyboardContainer;
+        this.game = game;
+        this.$keyboardContainer.addEventListener('click', this.isButton.bind(this));
+        document.addEventListener('keydown', this.keyPressed.bind(this));
+    }
+    isButton(e) {
+        if (!e.target)
+            return;
+        const { target } = e;
+        if (target.nodeName !== 'BUTTON')
+            return;
+        const btnValue = target.textContent?.toLowerCase();
+        if (!btnValue)
+            return;
+        this.isLetterOrSpecialKey(btnValue);
+    }
+    keyPressed(e) {
+        this.isLetterOrSpecialKey(e.key);
+    }
+    // keyboard letter ou a special key like enter or backspace
+    isLetterOrSpecialKey(key) {
+        if (!this.game.isRunning)
+            return;
+        if (key.length === 1) {
+            if ((0,_utils_isKeyALetter__WEBPACK_IMPORTED_MODULE_0__.isKeyALetter)(key)) {
+                this.game.addLetterToBlock(key);
+                return;
+            }
+        }
+        this.game.gameAction(key);
     }
 }
 
@@ -132,14 +251,26 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 class Table {
     _tableHTML;
+    _numRows;
+    _numCells;
     _cellPosition = 0;
     _rowPosition = 0;
     _isCleared = false;
-    constructor(_tableHTML) {
+    game = null;
+    constructor(_tableHTML, // private readonly _selectedWord: string,
+    _numRows, _numCells) {
         this._tableHTML = _tableHTML;
+        this._numRows = _numRows;
+        this._numCells = _numCells;
     }
     get tableHTML() {
         return this._tableHTML;
+    }
+    get numRows() {
+        return this._numRows;
+    }
+    get numCells() {
+        return this._numCells;
     }
     // get selectedWord() {
     //   return this._selectedWord;
@@ -161,6 +292,31 @@ class Table {
     }
     get rowPosition() {
         return this._rowPosition;
+    }
+    submitGuess(cells) {
+        console.log('submitGuess');
+    }
+    blockToLeft(cells) {
+        if (this.cellPosition > 0) {
+            cells[this.cellPosition].removeAttribute('class');
+            cells[this.cellPosition - 1].setAttribute('class', 'selectedPosition');
+            this.cellPosition--;
+        }
+    }
+    blockToRight(cells) {
+        console.log(cells);
+        if (this.cellPosition < cells.length - 1) {
+            cells[this.cellPosition].removeAttribute('class');
+            cells[this.cellPosition + 1].setAttribute('class', 'selectedPosition');
+            this.cellPosition++;
+        }
+    }
+    clearBlock(cells) {
+        if (cells[this.cellPosition].textContent === '')
+            return this.blockToLeft(cells);
+        cells[this.cellPosition].textContent = '';
+        if (this.game)
+            this.game.guessedLetters[this.cellPosition] = '';
     }
 }
 
@@ -208,9 +364,13 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _utils_selectWords__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./utils/selectWords */ "./src/utils/selectWords.ts");
 /* harmony import */ var _utils_removeAccents__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./utils/removeAccents */ "./src/utils/removeAccents.ts");
 /* harmony import */ var _services_htmlMenu__WEBPACK_IMPORTED_MODULE_7__ = __webpack_require__(/*! ./services/htmlMenu */ "./src/services/htmlMenu.ts");
-/* harmony import */ var _classes_game__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./classes/game */ "./src/classes/game.ts");
-/* harmony import */ var _classes_menu__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./classes/menu */ "./src/classes/menu.ts");
-/* harmony import */ var _classes_words__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./classes/words */ "./src/classes/words.ts");
+/* harmony import */ var _services_htmlVirtualKeyboard__WEBPACK_IMPORTED_MODULE_8__ = __webpack_require__(/*! ./services/htmlVirtualKeyboard */ "./src/services/htmlVirtualKeyboard.ts");
+/* harmony import */ var _classes_game__WEBPACK_IMPORTED_MODULE_9__ = __webpack_require__(/*! ./classes/game */ "./src/classes/game.ts");
+/* harmony import */ var _classes_menu__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./classes/menu */ "./src/classes/menu.ts");
+/* harmony import */ var _classes_words__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./classes/words */ "./src/classes/words.ts");
+/* harmony import */ var _classes_keyboard__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./classes/keyboard */ "./src/classes/keyboard.ts");
+
+
 
 
 
@@ -227,15 +387,20 @@ const listOfWordsFromFile = await (0,_utils_getWords__WEBPACK_IMPORTED_MODULE_0_
 const queryString = window.location.search;
 const urlParams = new URLSearchParams(queryString);
 const numOfGames = (0,_utils_getNumOfGames__WEBPACK_IMPORTED_MODULE_1__.getNumOfGames)(urlParams);
-(0,_utils_generateTables__WEBPACK_IMPORTED_MODULE_2__.generateTables)(_services_htmlGameDiv__WEBPACK_IMPORTED_MODULE_3__.$game, numOfGames, numOfGames + 5);
-const tables = (0,_utils_getTables__WEBPACK_IMPORTED_MODULE_4__.getTables)();
-const dbWords = new _classes_words__WEBPACK_IMPORTED_MODULE_10__.Words(listOfWordsFromFile);
-const selectedWords = new _classes_words__WEBPACK_IMPORTED_MODULE_10__.Words((0,_utils_selectWords__WEBPACK_IMPORTED_MODULE_5__.selectWords)(listOfWordsFromFile, numOfGames));
-const selectedWordsWithoutAccent = new _classes_words__WEBPACK_IMPORTED_MODULE_10__.Words([
+const numRows = numOfGames + 5;
+const numCells = 5;
+(0,_utils_generateTables__WEBPACK_IMPORTED_MODULE_2__.generateTables)(_services_htmlGameDiv__WEBPACK_IMPORTED_MODULE_3__.$game, numOfGames, numOfGames + 5, numCells);
+const tables = (0,_utils_getTables__WEBPACK_IMPORTED_MODULE_4__.getTables)(numRows, numCells);
+const dbWords = new _classes_words__WEBPACK_IMPORTED_MODULE_11__.Words(listOfWordsFromFile);
+const dbWordsWithoutAccent = new _classes_words__WEBPACK_IMPORTED_MODULE_11__.Words([...(0,_utils_removeAccents__WEBPACK_IMPORTED_MODULE_6__.removeAccents)(dbWords.words)]);
+const selectedWords = new _classes_words__WEBPACK_IMPORTED_MODULE_11__.Words((0,_utils_selectWords__WEBPACK_IMPORTED_MODULE_5__.selectWords)(listOfWordsFromFile, numOfGames));
+const selectedWordsWithoutAccent = new _classes_words__WEBPACK_IMPORTED_MODULE_11__.Words([
     ...(0,_utils_removeAccents__WEBPACK_IMPORTED_MODULE_6__.removeAccents)(selectedWords.words),
 ]);
-const game = new _classes_game__WEBPACK_IMPORTED_MODULE_8__.Game(tables, dbWords, selectedWords, selectedWordsWithoutAccent, numOfGames);
-const menu = new _classes_menu__WEBPACK_IMPORTED_MODULE_9__.Menu(game, _services_htmlMenu__WEBPACK_IMPORTED_MODULE_7__.$menu);
+const game = new _classes_game__WEBPACK_IMPORTED_MODULE_9__.Game(tables, dbWords, dbWordsWithoutAccent, selectedWords, selectedWordsWithoutAccent, numOfGames);
+const menu = new _classes_menu__WEBPACK_IMPORTED_MODULE_10__.Menu(game, _services_htmlMenu__WEBPACK_IMPORTED_MODULE_7__.$menu);
+const keyboard = new _classes_keyboard__WEBPACK_IMPORTED_MODULE_12__.Keyboard(_services_htmlVirtualKeyboard__WEBPACK_IMPORTED_MODULE_8__.$keyboardContainer, game);
+game.isRunning = true;
 
 __webpack_async_result__();
 } catch(e) { __webpack_async_result__(e); } }, 1);
@@ -278,6 +443,42 @@ const $menuButtons = $menu.getElementsByTagName('button');
 const $menuTitle = $menu.querySelector('#title-menu');
 const $menuDescription = $menu.querySelector('#description-menu');
 const $menuGameWords = $menu.querySelector('#menu-game-words');
+
+
+/***/ }),
+
+/***/ "./src/services/htmlVirtualKeyboard.ts":
+/*!*********************************************!*\
+  !*** ./src/services/htmlVirtualKeyboard.ts ***!
+  \*********************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "$keyboardButtons": () => (/* binding */ $keyboardButtons),
+/* harmony export */   "$keyboardContainer": () => (/* binding */ $keyboardContainer)
+/* harmony export */ });
+const $keyboardContainer = document.querySelector('#keyboard');
+const $keyboardButtons = document.getElementsByClassName('keyboard-btn');
+
+
+/***/ }),
+
+/***/ "./src/utils/callClassMethod.ts":
+/*!**************************************!*\
+  !*** ./src/utils/callClassMethod.ts ***!
+  \**************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "callClassMethod": () => (/* binding */ callClassMethod)
+/* harmony export */ });
+function callClassMethod(obj, objMethod, ...params) {
+    obj[objMethod](...params);
+}
 
 
 /***/ }),
@@ -338,6 +539,26 @@ function generateWordBlocks(table, newTable, rows, cells) {
 
 /***/ }),
 
+/***/ "./src/utils/getCells.ts":
+/*!*******************************!*\
+  !*** ./src/utils/getCells.ts ***!
+  \*******************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "getCells": () => (/* binding */ getCells)
+/* harmony export */ });
+function getCells(game, $word) {
+    const rows = $word.getElementsByTagName('tr');
+    const cells = rows[game.rowPosition].getElementsByTagName('td');
+    return cells;
+}
+
+
+/***/ }),
+
 /***/ "./src/utils/getNumOfGames.ts":
 /*!************************************!*\
   !*** ./src/utils/getNumOfGames.ts ***!
@@ -373,14 +594,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _classes_table__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../classes/table */ "./src/classes/table.ts");
 
-function getTables() {
+function getTables(numRows, numCells) {
     // return document.getElementsByClassName(
     //   'word',
     // ) as HTMLCollectionOf<HTMLTableElement>;
     const tables = document.getElementsByClassName('word');
     const tablesInstanceList = [];
     for (let i = 0; i < tables.length; i++) {
-        const tableInstance = new _classes_table__WEBPACK_IMPORTED_MODULE_0__.Table(tables[i]);
+        const tableInstance = new _classes_table__WEBPACK_IMPORTED_MODULE_0__.Table(tables[i], numRows, numCells);
         tablesInstanceList.push(tableInstance);
     }
     return tablesInstanceList;
@@ -450,6 +671,24 @@ const getWords = async (csvFilePath) => {
     // console.log(palavras);
     return dbWords;
 };
+
+
+/***/ }),
+
+/***/ "./src/utils/isKeyALetter.ts":
+/*!***********************************!*\
+  !*** ./src/utils/isKeyALetter.ts ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "isKeyALetter": () => (/* binding */ isKeyALetter)
+/* harmony export */ });
+function isKeyALetter(key) {
+    return key.match(/[a-z]/i);
+}
 
 
 /***/ }),

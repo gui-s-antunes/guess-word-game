@@ -1,4 +1,5 @@
-import { Game } from '../game';
+// import { Game } from '../game';
+import { Game } from '../classes/game';
 import { getCells } from './getCells';
 import { replaceStringPart } from './replaceString';
 
