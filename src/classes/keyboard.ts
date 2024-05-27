@@ -16,7 +16,7 @@ export class Keyboard {
 
     if ((target as HTMLElement).nodeName !== 'BUTTON') return;
 
-    const btnValue = (target as HTMLButtonElement).textContent?.toLowerCase();
+    const btnValue = (target as HTMLButtonElement).textContent?.trim();
 
     if (!btnValue) return;
 
