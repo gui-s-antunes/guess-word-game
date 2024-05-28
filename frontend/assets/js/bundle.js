@@ -33,6 +33,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _utils_getCells__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../utils/getCells */ "./src/utils/getCells.ts");
 /* harmony import */ var _utils_callClassMethod__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../utils/callClassMethod */ "./src/utils/callClassMethod.ts");
+/* harmony import */ var _utils_changeKeyboardColors__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../utils/changeKeyboardColors */ "./src/utils/changeKeyboardColors.ts");
+
 
 
 class Game {
@@ -43,8 +45,10 @@ class Game {
     selectedWordsWithoutAccent;
     numOfGames;
     _isRunning = false;
+    _gameEnded = false;
     _guessedLetters = [];
     _rowPosition = 0;
+    _menu = null;
     constructor(_tables, dbWords, dbWordsWithoutAccent, selectedWords, selectedWordsWithoutAccent, numOfGames) {
         this._tables = _tables;
         this.dbWords = dbWords;
@@ -56,8 +60,14 @@ class Game {
     get isRunning() {
         return this._isRunning;
     }
-    set isRunning(flag) {
-        this._isRunning = flag;
+    get gameEnded() {
+        return this._gameEnded;
+    }
+    pauseGame() {
+        this._isRunning = false;
+    }
+    resumeGame() {
+        this._isRunning = true;
     }
     setGuessedLetters(letter, pos) {
         const actualLetters = [...this.guessedLetters];
@@ -72,6 +82,12 @@ class Game {
     }
     get rowPosition() {
         return this._rowPosition;
+    }
+    set menu(menu) {
+        this._menu = menu;
+    }
+    get menu() {
+        return this._menu;
     }
     get tables() {
         return this._tables;
@@ -113,6 +129,40 @@ class Game {
         if (!this.isBlocksFulfilled() || !this.isGuessedWordValid())
             return;
         this.processTablesAction('submitGuess', this);
+        this.cleanGuessedLetters();
+        setTimeout(() => {
+            (0,_utils_changeKeyboardColors__WEBPACK_IMPORTED_MODULE_2__.changeKeyboardColors)(this);
+            this.setRowPos();
+            if (!this.isLastRow() && !this.areAllTablesCleared())
+                return this.resumeGame();
+            // one of the tables (game word) was cleared! check if there's remaining to be cleared
+            if (this.areAllTablesCleared())
+                return this.gameEnd('You win!');
+            else if (this.isLastRow())
+                return this.gameEnd('You lose!');
+            // There's row remaining
+            return this.resumeGame();
+            // // the game was cleared!
+        }, 2600);
+    }
+    cleanGuessedLetters() {
+        this.guessedLetters.splice(0, this.guessedLetters.length);
+    }
+    isLastRow() {
+        return this.rowPosition === this.tables[0].numRows;
+    }
+    areAllTablesCleared() {
+        return this.tables.every((table) => table.isCleared);
+    }
+    // this games was finished
+    gameEnd(text) {
+        this._gameEnded = true;
+        this.menu?.changeMenuTitle(text);
+        const wordsText = `[${this.selectedWords.words.join(', ')}]`;
+        this.menu?.changeMenuWordsSelected(wordsText);
+        setTimeout(() => {
+            this.menu?.showMenu();
+        }, 1000);
     }
     processTablesAction(methodToCall, game) {
         for (let i = 0; i < this.tables.length; i++) {
@@ -168,7 +218,7 @@ class Keyboard {
         const { target } = e;
         if (target.nodeName !== 'BUTTON')
             return;
-        const btnValue = target.textContent?.toLowerCase();
+        const btnValue = target.textContent?.trim();
         if (!btnValue)
             return;
         this.isLetterOrSpecialKey(btnValue);
@@ -217,9 +267,9 @@ class Menu {
         this.game = game;
         this._menuContainer = _menuContainer;
         this._menuContainer.addEventListener('click', this.isButton.bind(this));
+        this.isThereGamesParam();
     }
     isButton(e) {
-        console.log('isButton');
         if (!e.target)
             return;
         const { target } = e;
@@ -228,7 +278,7 @@ class Menu {
         const numOfGames = target.getAttribute('value');
         if (numOfGames === null)
             return;
-        if (Number(numOfGames) > 1) {
+        if (Number(numOfGames) > 1 || this.game.gameEnded) {
             this.game.newGame(numOfGames);
         }
         else {
@@ -236,12 +286,23 @@ class Menu {
         }
     }
     hiddenMenu() {
-        console.log('hiddenMenu');
         this._menuContainer.style.display = 'none';
     }
     showMenu() {
-        console.log('showMenu');
         this._menuContainer.style.display = 'flex';
+    }
+    changeMenuTitle(text) {
+        const titleMenu = document.getElementById('title-menu');
+        titleMenu.textContent = text;
+    }
+    changeMenuWordsSelected(selectedWords) {
+        const $menuWords = document.getElementById('menu-game-words');
+        $menuWords.textContent = selectedWords;
+        $menuWords.style.display = 'block';
+    }
+    isThereGamesParam() {
+        if (window.location.search)
+            this.hiddenMenu();
     }
 }
 
@@ -261,19 +322,29 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 class Table {
     _tableHTML;
+    _selectedWord;
+    _selectedWordWithoutAccent;
     _numRows;
     _numCells;
     _cellPosition = 0;
     _rowPosition = 0;
     _isCleared = false;
     constructor(_tableHTML, // private readonly _selectedWord: string,
-    _numRows, _numCells) {
+    _selectedWord, _selectedWordWithoutAccent, _numRows, _numCells) {
         this._tableHTML = _tableHTML;
+        this._selectedWord = _selectedWord;
+        this._selectedWordWithoutAccent = _selectedWordWithoutAccent;
         this._numRows = _numRows;
         this._numCells = _numCells;
     }
     get tableHTML() {
         return this._tableHTML;
+    }
+    get selectedWordWithoutAccent() {
+        return this._selectedWordWithoutAccent;
+    }
+    get selectedWord() {
+        return this._selectedWord;
     }
     get numRows() {
         return this._numRows;
@@ -302,8 +373,112 @@ class Table {
     get rowPosition() {
         return this._rowPosition;
     }
-    submitGuess(cells) {
+    submitGuess(cells, game) {
         console.log('submitGuess');
+        game.pauseGame();
+        cells[this.cellPosition].removeAttribute('class');
+        const guessedWord = game.guessedLetters.join('');
+        this.checkCorrectLetters(cells, guessedWord);
+        setTimeout(() => {
+            if (this.areAllTheCellsCorrect(cells)) {
+                this.isCleared = true;
+                this.addAccentToGuessedWord(cells, guessedWord);
+                return;
+            }
+            this.goToNextRow(cells);
+        }, 2500);
+    }
+    checkCorrectLetters(cells, guessedWord) {
+        const guessedWordChars = [...guessedWord];
+        let letterToCheck = '';
+        const colorsPos = [];
+        for (let j = 0; j < guessedWordChars.length; j++) {
+            if (!guessedWordChars[j])
+                continue;
+            let indexValue = 0;
+            let cont = 0;
+            letterToCheck = guessedWordChars[j];
+            while (indexValue !== -1) {
+                indexValue = this.selectedWordWithoutAccent.indexOf(letterToCheck, indexValue);
+                if (indexValue === -1)
+                    continue;
+                if (guessedWordChars[indexValue] === '')
+                    break;
+                if (guessedWordChars[indexValue] ===
+                    this.selectedWordWithoutAccent[indexValue]) {
+                    colorsPos[indexValue] = 'greenBlock';
+                    guessedWordChars[indexValue] = '';
+                    indexValue++;
+                    continue;
+                }
+                cont++;
+                indexValue++;
+            }
+            if (cont === 0)
+                continue;
+            guessedWordChars.forEach((char, index) => {
+                if (cont > 0 && char === letterToCheck) {
+                    colorsPos[index] = 'yellowBlock';
+                    cont--;
+                }
+            });
+        }
+        this.addColorAttributeToBlocks(cells, colorsPos);
+    }
+    addColorAttributeToBlocks(cells, colorsPos) {
+        for (let i = 0; i < cells.length; i++) {
+            setTimeout(() => {
+                cells[i].setAttribute('color', colorsPos[i] || 'missedBlock');
+            }, 0.3 * i * 1000);
+        }
+    }
+    areAllTheCellsCorrect(cells) {
+        const cellsArray = Array.from(cells);
+        return cellsArray.every((td) => td.getAttribute('color') === 'greenBlock');
+    }
+    addAccentToGuessedWord(cells, guessedWord) {
+        const guessedWordChars = [...guessedWord];
+        for (let i = 0; i < this.selectedWordWithoutAccent.length; i++) {
+            if (this.selectedWord[i] === guessedWordChars[i])
+                continue;
+            guessedWordChars[i] = this.selectedWord[i];
+        }
+        const guessedWordWithAccent = guessedWordChars.join('');
+        this.blocksToGetAccent(guessedWordWithAccent, cells);
+    }
+    blocksToGetAccent(guessedWordWithAccent, cells) {
+        for (let i = 0; i < cells.length; i++) {
+            if (guessedWordWithAccent[i] === cells[i].textContent)
+                continue;
+            cells[i].textContent = guessedWordWithAccent[i].toUpperCase();
+        }
+    }
+    goToNextRow(cells) {
+        this.removeSelectedCell(cells);
+        const nextRow = this.getNextRow();
+        if (this.isTheLastRow(nextRow))
+            return;
+        this.changeSelectedBlock(cells, nextRow);
+        this.activeNewRow(nextRow);
+    }
+    removeSelectedCell(cells) {
+        cells[this.cellPosition].removeAttribute('class');
+    }
+    getNextRow() {
+        return this.tableHTML.getElementsByTagName('tr')[this.rowPosition + 1];
+    }
+    isTheLastRow(row) {
+        if (row === null || !row)
+            return true;
+    }
+    changeSelectedBlock(cells, nextRow) {
+        cells[this.cellPosition].removeAttribute('class');
+        nextRow.children[0].setAttribute('class', 'selectedPosition');
+    }
+    activeNewRow(nextRow) {
+        nextRow.setAttribute('class', 'usedRow');
+        this.rowPosition++;
+        this.cellPosition = 0;
     }
     blockToLeft(cells) {
         if (this.cellPosition > 0) {
@@ -313,7 +488,6 @@ class Table {
         }
     }
     blockToRight(cells) {
-        console.log(cells);
         if (this.cellPosition < cells.length - 1) {
             cells[this.cellPosition].removeAttribute('class');
             cells[this.cellPosition + 1].setAttribute('class', 'selectedPosition');
@@ -398,18 +572,19 @@ const urlParams = new URLSearchParams(queryString);
 const numOfGames = (0,_utils_getNumOfGames__WEBPACK_IMPORTED_MODULE_1__.getNumOfGames)(urlParams);
 const numRows = numOfGames + 5;
 const numCells = 5;
-(0,_utils_generateTables__WEBPACK_IMPORTED_MODULE_2__.generateTables)(_services_htmlGameDiv__WEBPACK_IMPORTED_MODULE_3__.$game, numOfGames, numOfGames + 5, numCells);
-const tables = (0,_utils_getTables__WEBPACK_IMPORTED_MODULE_4__.getTables)(numRows, numCells);
 const dbWords = new _classes_words__WEBPACK_IMPORTED_MODULE_11__.Words(listOfWordsFromFile);
 const dbWordsWithoutAccent = new _classes_words__WEBPACK_IMPORTED_MODULE_11__.Words([...(0,_utils_removeAccents__WEBPACK_IMPORTED_MODULE_6__.removeAccents)(dbWords.words)]);
 const selectedWords = new _classes_words__WEBPACK_IMPORTED_MODULE_11__.Words((0,_utils_selectWords__WEBPACK_IMPORTED_MODULE_5__.selectWords)(listOfWordsFromFile, numOfGames));
 const selectedWordsWithoutAccent = new _classes_words__WEBPACK_IMPORTED_MODULE_11__.Words([
     ...(0,_utils_removeAccents__WEBPACK_IMPORTED_MODULE_6__.removeAccents)(selectedWords.words),
 ]);
+(0,_utils_generateTables__WEBPACK_IMPORTED_MODULE_2__.generateTables)(_services_htmlGameDiv__WEBPACK_IMPORTED_MODULE_3__.$game, numOfGames, numOfGames + 5, numCells);
+const tables = (0,_utils_getTables__WEBPACK_IMPORTED_MODULE_4__.getTables)(selectedWords.words, selectedWordsWithoutAccent.words, numRows, numCells);
 const game = new _classes_game__WEBPACK_IMPORTED_MODULE_9__.Game(tables, dbWords, dbWordsWithoutAccent, selectedWords, selectedWordsWithoutAccent, numOfGames);
 const menu = new _classes_menu__WEBPACK_IMPORTED_MODULE_10__.Menu(game, _services_htmlMenu__WEBPACK_IMPORTED_MODULE_7__.$menu);
+game.menu = menu;
 const keyboard = new _classes_keyboard__WEBPACK_IMPORTED_MODULE_12__.Keyboard(_services_htmlVirtualKeyboard__WEBPACK_IMPORTED_MODULE_8__.$keyboardContainer, game);
-game.isRunning = true;
+game.resumeGame();
 
 __webpack_async_result__();
 } catch(e) { __webpack_async_result__(e); } }, 1);
@@ -487,6 +662,79 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 function callClassMethod(obj, objMethod, ...params) {
     obj[objMethod](...params);
+}
+
+
+/***/ }),
+
+/***/ "./src/utils/changeKeyboardColors.ts":
+/*!*******************************************!*\
+  !*** ./src/utils/changeKeyboardColors.ts ***!
+  \*******************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "changeKeyboardColors": () => (/* binding */ changeKeyboardColors)
+/* harmony export */ });
+/* harmony import */ var _getCells__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./getCells */ "./src/utils/getCells.ts");
+/* harmony import */ var _replaceString__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./replaceString */ "./src/utils/replaceString.ts");
+
+
+const colors = {
+    greenBlock: 'rgb(66, 106, 64)',
+    yellowBlock: 'rgb(137, 130, 54)',
+    missedBlock: 'rgb(108, 108, 75)',
+};
+function changeKeyboardColors(game) {
+    const numOfTables = game.tables.length;
+    for (let i = 0; i < game.tables.length; i++) {
+        const cells = (0,_getCells__WEBPACK_IMPORTED_MODULE_0__.getCells)(game, game.tables[i].tableHTML);
+        const yelledLetters = new Set();
+        const greenyLetters = new Set();
+        for (let j = 0; j < cells.length; j++) {
+            const cellText = cells[j].textContent?.toUpperCase();
+            if (yelledLetters.has(cellText))
+                continue;
+            const colorAttribute = cells[j].getAttribute('color');
+            if (greenyLetters.has(cellText)) {
+                if (colorAttribute === 'missedBlock' || colorAttribute === 'greenBlock')
+                    continue;
+            }
+            if (colorAttribute === 'yellowBlock')
+                yelledLetters.add(cellText);
+            if (colorAttribute === 'greenBlock')
+                greenyLetters.add(cellText);
+            const backgroundColor = colors[colorAttribute || ''];
+            if (!backgroundColor)
+                continue;
+            const btn = document.getElementById(cellText || '');
+            if (!btn)
+                continue;
+            if (numOfTables === 1) {
+                btn.style.background = backgroundColor;
+                continue;
+            }
+            const style = window.getComputedStyle(btn);
+            const btnBackgroundStyle = style.getPropertyValue('background');
+            const regexp = /rgb\(\d+, \d+, \d+\)/g;
+            let matches = [...btnBackgroundStyle.matchAll(regexp)];
+            let newBackground = '';
+            let matchIndex = matches[i].index;
+            if (matchIndex === undefined)
+                continue;
+            newBackground = (0,_replaceString__WEBPACK_IMPORTED_MODULE_1__.replaceStringPart)(btnBackgroundStyle, matchIndex, matchIndex + matches[i][0].length, backgroundColor);
+            if (numOfTables === 2) {
+                matches = [...newBackground.matchAll(regexp)];
+                matchIndex = matches[i + 2].index;
+                if (matchIndex === undefined)
+                    continue;
+                newBackground = (0,_replaceString__WEBPACK_IMPORTED_MODULE_1__.replaceStringPart)(newBackground, matchIndex, matchIndex + matches[i + 2][0].length, backgroundColor);
+            }
+            btn.style.background = newBackground;
+        }
+    }
 }
 
 
@@ -603,14 +851,14 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 /* harmony import */ var _classes_table__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../classes/table */ "./src/classes/table.ts");
 
-function getTables(numRows, numCells) {
+function getTables(selectedWords, selectedWordsWithoutAccent, numRows, numCells) {
     // return document.getElementsByClassName(
     //   'word',
     // ) as HTMLCollectionOf<HTMLTableElement>;
     const tables = document.getElementsByClassName('word');
     const tablesInstanceList = [];
     for (let i = 0; i < tables.length; i++) {
-        const tableInstance = new _classes_table__WEBPACK_IMPORTED_MODULE_0__.Table(tables[i], numRows, numCells);
+        const tableInstance = new _classes_table__WEBPACK_IMPORTED_MODULE_0__.Table(tables[i], selectedWords[i], selectedWordsWithoutAccent[i], numRows, numCells);
         tablesInstanceList.push(tableInstance);
     }
     return tablesInstanceList;
@@ -757,6 +1005,24 @@ function removeAccents(words) {
         wordsWithoutAccent.push(wordChars.join(''));
     }
     return wordsWithoutAccent;
+}
+
+
+/***/ }),
+
+/***/ "./src/utils/replaceString.ts":
+/*!************************************!*\
+  !*** ./src/utils/replaceString.ts ***!
+  \************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "replaceStringPart": () => (/* binding */ replaceStringPart)
+/* harmony export */ });
+function replaceStringPart(str, startPos, endPos, substitute) {
+    return str.slice(0, startPos) + substitute + str.slice(endPos);
 }
 
 

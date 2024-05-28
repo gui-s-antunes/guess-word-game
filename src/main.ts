@@ -24,15 +24,20 @@ const numOfGames = getNumOfGames(urlParams);
 const numRows = numOfGames + 5;
 const numCells = 5;
 
-generateTables($game, numOfGames, numOfGames + 5, numCells);
-const tables = getTables(numRows, numCells);
-
 const dbWords = new Words(listOfWordsFromFile);
 const dbWordsWithoutAccent = new Words([...removeAccents(dbWords.words)]);
 const selectedWords = new Words(selectWords(listOfWordsFromFile, numOfGames));
 const selectedWordsWithoutAccent = new Words([
   ...removeAccents(selectedWords.words),
 ]);
+
+generateTables($game, numOfGames, numOfGames + 5, numCells);
+const tables = getTables(
+  selectedWords.words,
+  selectedWordsWithoutAccent.words,
+  numRows,
+  numCells,
+);
 
 const game = new Game(
   tables,
@@ -44,7 +49,8 @@ const game = new Game(
 );
 
 const menu = new Menu(game, $menu);
+game.menu = menu;
 
 const keyboard = new Keyboard($keyboardContainer, game);
 
-game.isRunning = true;
+game.resumeGame();
