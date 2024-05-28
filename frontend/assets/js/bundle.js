@@ -552,6 +552,8 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _classes_menu__WEBPACK_IMPORTED_MODULE_10__ = __webpack_require__(/*! ./classes/menu */ "./src/classes/menu.ts");
 /* harmony import */ var _classes_words__WEBPACK_IMPORTED_MODULE_11__ = __webpack_require__(/*! ./classes/words */ "./src/classes/words.ts");
 /* harmony import */ var _classes_keyboard__WEBPACK_IMPORTED_MODULE_12__ = __webpack_require__(/*! ./classes/keyboard */ "./src/classes/keyboard.ts");
+/* harmony import */ var _utils_addClickToBlocks__WEBPACK_IMPORTED_MODULE_13__ = __webpack_require__(/*! ./utils/addClickToBlocks */ "./src/utils/addClickToBlocks.ts");
+
 
 
 
@@ -580,6 +582,7 @@ const selectedWordsWithoutAccent = new _classes_words__WEBPACK_IMPORTED_MODULE_1
 ]);
 (0,_utils_generateTables__WEBPACK_IMPORTED_MODULE_2__.generateTables)(_services_htmlGameDiv__WEBPACK_IMPORTED_MODULE_3__.$game, numOfGames, numOfGames + 5, numCells);
 const tables = (0,_utils_getTables__WEBPACK_IMPORTED_MODULE_4__.getTables)(selectedWords.words, selectedWordsWithoutAccent.words, numRows, numCells);
+(0,_utils_addClickToBlocks__WEBPACK_IMPORTED_MODULE_13__.addClickToBlocks)(tables);
 const game = new _classes_game__WEBPACK_IMPORTED_MODULE_9__.Game(tables, dbWords, dbWordsWithoutAccent, selectedWords, selectedWordsWithoutAccent, numOfGames);
 const menu = new _classes_menu__WEBPACK_IMPORTED_MODULE_10__.Menu(game, _services_htmlMenu__WEBPACK_IMPORTED_MODULE_7__.$menu);
 game.menu = menu;
@@ -645,6 +648,58 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony export */ });
 const $keyboardContainer = document.querySelector('#keyboard');
 const $keyboardButtons = document.getElementsByClassName('keyboard-btn');
+
+
+/***/ }),
+
+/***/ "./src/utils/addClickToBlocks.ts":
+/*!***************************************!*\
+  !*** ./src/utils/addClickToBlocks.ts ***!
+  \***************************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   "addClickToBlocks": () => (/* binding */ addClickToBlocks)
+/* harmony export */ });
+function addClickToBlocks(tables) {
+    // const blockLines = table.tableHTML.getElementsByTagName('tr');
+    // // const blocks = table.tableHTML.getElementsByTagName('td');
+    // for (let i = 0; i < blockLines.length; i++) {
+    //   const blocks = blockLines[i].getElementsByTagName('td');
+    //   for (let j = 0; j < blocks.length; j++) {
+    //     blocks[j].addEventListener('click', () => {
+    //       if (i !== table.rowPosition) return;
+    //       blockClickEvent(j);
+    //     });
+    //   }
+    // }
+    for (let i = 0; i < tables.length; i++) {
+        const blockLines = tables[i].tableHTML.getElementsByTagName('tr');
+        for (let j = 0; j < blockLines.length; j++) {
+            const blocks = blockLines[j].getElementsByTagName('td');
+            for (let k = 0; k < blocks.length; k++) {
+                blocks[k].addEventListener('click', () => {
+                    if (j !== tables[i].rowPosition)
+                        return;
+                    blockClickEvent(k, tables);
+                });
+            }
+        }
+    }
+}
+function blockClickEvent(newPos, tables) {
+    for (let i = 0; i < tables.length; i++) {
+        if (tables[i].isCleared)
+            continue;
+        const rows = tables[i].tableHTML.getElementsByTagName('tr');
+        const cells = rows[tables[i].rowPosition].getElementsByTagName('td');
+        cells[tables[i].cellPosition].removeAttribute('class');
+        tables[i].cellPosition = newPos;
+        cells[tables[i].cellPosition].setAttribute('class', 'selectedPosition');
+    }
+}
 
 
 /***/ }),

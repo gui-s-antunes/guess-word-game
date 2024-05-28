@@ -11,6 +11,7 @@ import { Game } from './classes/game';
 import { Menu } from './classes/menu';
 import { Words } from './classes/words';
 import { Keyboard } from './classes/keyboard';
+import { addClickToBlocks } from './utils/addClickToBlocks';
 
 const wordsFilePath = './assets/files/profiles2.csv';
 
@@ -38,6 +39,7 @@ const tables = getTables(
   numRows,
   numCells,
 );
+addClickToBlocks(tables);
 
 const game = new Game(
   tables,
